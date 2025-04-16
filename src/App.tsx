@@ -53,6 +53,7 @@ function App() {
   const [showNameModal, setShowNameModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [scheduleTitle, setScheduleTitle] = useState('');
+  const [displayTitle, setDisplayTitle] = useState('');
   const [timeRange, setTimeRange] = useState<TimeRange>(() => {
     const stored = localStorage.getItem('calendar-time-range');
     return stored ? JSON.parse(stored) : { start: 8, end: 21 };
@@ -89,7 +90,9 @@ function App() {
     const titleParam = params.get('title');
     
     if (titleParam) {
-      setScheduleTitle(decodeURIComponent(titleParam));
+      const decodedTitle = decodeURIComponent(titleParam);
+      setScheduleTitle(decodedTitle);
+      setDisplayTitle(decodedTitle);
     } else if (isCreator) {
       setShowTitleModal(true);
     }
@@ -154,6 +157,7 @@ function App() {
     }
     if (storedTitle) {
       setScheduleTitle(storedTitle);
+      setDisplayTitle(storedTitle);
     }
   };
 
@@ -247,6 +251,7 @@ function App() {
 
   const handleTitleSubmit = () => {
     if (!scheduleTitle.trim()) return;
+    setDisplayTitle(scheduleTitle);
     setShowTitleModal(false);
   };
 
@@ -773,9 +778,9 @@ function App() {
                   </button>
                 )}
               </div>
-              {!isCreator && scheduleTitle && (
+              {displayTitle && (
                 <span className="text-gray-600 ml-2">
-                  - {scheduleTitle}
+                  - {displayTitle}
                 </span>
               )}
             </div>
@@ -1259,7 +1264,10 @@ function App() {
                 placeholder="タイトルを入力"
                 className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={scheduleTitle}
-                onChange={(e) => setScheduleTitle(e.target.value)}
+                onChange={(e) => {
+                  setScheduleTitle(e.target.value);
+                  setDisplayTitle(e.target.value);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && scheduleTitle.trim()) {
                     handleTitleSubmit();
