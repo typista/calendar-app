@@ -768,7 +768,21 @@ function App() {
               </button>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl text-gray-800 ml-1">カレンダー</h1>
-                {isCreator && (
+                {displayTitle && (
+                  <span className="text-gray-600">
+                    {displayTitle}
+                    {isCreator && (
+                      <button
+                        className="p-2 hover:bg-gray-100 rounded-full ml-1"
+                        onClick={() => setShowTitleModal(true)}
+                        title="タイトルを編集"
+                      >
+                        <PenSquare className="w-4 h-4 text-gray-600" />
+                      </button>
+                    )}
+                  </span>
+                )}
+                {!displayTitle && isCreator && (
                   <button
                     className="p-2 hover:bg-gray-100 rounded-full"
                     onClick={() => setShowTitleModal(true)}
@@ -778,11 +792,6 @@ function App() {
                   </button>
                 )}
               </div>
-              {displayTitle && (
-                <span className="text-gray-600 ml-2">
-                  - {displayTitle}
-                </span>
-              )}
             </div>
             <div className="flex items-center gap-2">
               <button 
