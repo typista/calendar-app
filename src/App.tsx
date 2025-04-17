@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Search, Settings, Grid, Plus, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Event {
@@ -812,17 +812,11 @@ function App() {
                 )}
                 <Share2 className="w-6 h-6 text-gray-600" />
               </button>
-              <button className="p-3 hover:bg-gray-100 rounded-full hidden sm:block">
-                <Search className="w-6 h-6 text-gray-600" />
-              </button>
               <button 
                 className="p-3 hover:bg-gray-100 rounded-full hidden sm:block"
                 onClick={() => setShowSettingsModal(true)}
               >
                 <Settings className="w-6 h-6 text-gray-600" />
-              </button>
-              <button className="p-3 hover:bg-gray-100 rounded-full hidden sm:block">
-                <Grid className="w-6 h-6 text-gray-600" />
               </button>
             </div>
           </div>
