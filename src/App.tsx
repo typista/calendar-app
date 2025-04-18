@@ -37,6 +37,10 @@ interface TimeRange {
 }
 
 function App() {
+  const [scheduleId, setScheduleId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id') || '';
+  });
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -88,14 +92,7 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const eventsParam = params.get('events');
     const titleParam = params.get('title');
-    
-    if (titleParam) {
-      const decodedTitle = decodeURIComponent(titleParam);
-      setScheduleTitle(decodedTitle);
-      setDisplayTitle(decodedTitle);
-    } else if (isCreator) {
-      setShowTitleModal(true);
-    }
+    const idParam = params.get('id');
     
     if (eventsParam) {
       try {
@@ -106,6 +103,18 @@ function App() {
           end: new Date(event.end)
         }));
         setEvents(parsedEvents);
+
+        if (idParam) {
+          setScheduleId(idParam);
+          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(decodedEvents));
+          
+          if (titleParam) {
+            const decodedTitle = decodeURIComponent(titleParam);
+            setScheduleTitle(decodedTitle);
+            setDisplayTitle(decodedTitle);
+            localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
+          }
+        }
 
         const uniqueApprovers = new Set<string>();
         parsedEvents.forEach(event => {
@@ -121,12 +130,35 @@ function App() {
         }
       } catch (error) {
         console.error('Failed to parse events from URL:', error);
-        loadFromLocalStorage();
+        if (idParam) {
+          loadFromLocalStorage(idParam);
+        }
       }
-    } else {
-      loadFromLocalStorage();
+    } else if (idParam) {
+      loadFromLocalStorage(idParam);
+    } else if (isCreator) {
+      const newScheduleId = uuidv4();
+      setScheduleId(newScheduleId);
+      setShowTitleModal(true);
     }
   }, [userName, isCreator]);
+
+  useEffect(() => {
+    if (scheduleId && isCreator) {
+      const storedEvents: StoredEvent[] = events.map(event => ({
+        ...event,
+        start: event.start.toISOString(),
+        end: event.end.toISOString()
+      }));
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(storedEvents));
+    }
+  }, [events, scheduleId, isCreator]);
+
+  useEffect(() => {
+    if (scheduleId && scheduleTitle) {
+      localStorage.setItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
+    }
+  }, [scheduleTitle, scheduleId]);
 
   useEffect(() => {
     localStorage.setItem('calendar-time-range', JSON.stringify(timeRange));
@@ -144,9 +176,10 @@ function App() {
     }
   }, [scheduleTitle]);
 
-  const loadFromLocalStorage = () => {
-    const storedEvents = localStorage.getItem('calendar-events');
-    const storedTitle = localStorage.getItem('calendar-schedule-title');
+  const loadFromLocalStorage = (id: string) => {
+    const storedEvents = localStorage.getItem(`calendar-events-${id}`);
+    const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
+    
     if (storedEvents) {
       const parsedEvents: StoredEvent[] = JSON.parse(storedEvents);
       setEvents(parsedEvents.map(event => ({
@@ -155,22 +188,12 @@ function App() {
         end: new Date(event.end)
       })));
     }
+    
     if (storedTitle) {
       setScheduleTitle(storedTitle);
       setDisplayTitle(storedTitle);
     }
   };
-
-  useEffect(() => {
-    if (isCreator) {
-      const storedEvents: StoredEvent[] = events.map(event => ({
-        ...event,
-        start: event.start.toISOString(),
-        end: event.end.toISOString()
-      }));
-      localStorage.setItem('calendar-events', JSON.stringify(storedEvents));
-    }
-  }, [events, isCreator]);
 
   const handleShareEvents = () => {
     if (!userName) {
@@ -202,6 +225,7 @@ function App() {
     const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
     const url = new URL(window.location.href);
     url.searchParams.set('events', encodedEvents);
+    url.searchParams.set('id', scheduleId);
     if (scheduleTitle) {
       url.searchParams.set('title', encodeURIComponent(scheduleTitle));
     }
@@ -811,7 +835,6 @@ function App() {
                 {showCopiedToast && (
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap z-50">
                     URLをコピーしました
-                  
                   </div>
                 )}
               </div>
