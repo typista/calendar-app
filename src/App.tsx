@@ -800,18 +800,21 @@ function App() {
               >
                 <List className="w-6 h-6 text-gray-600" />
               </button>
-              <button 
-                className="p-3 hover:bg-gray-100 rounded-full relative hidden sm:block"
-                onClick={handleShareEvents}
-                title={copyButtonText}
-              >
+              <div className="relative">
+                <button 
+                  className="p-3 hover:bg-gray-100 rounded-full relative hidden sm:block"
+                  onClick={handleShareEvents}
+                  title={copyButtonText}
+                >
+                  <Share2 className="w-6 h-6 text-gray-600" />
+                </button>
                 {showCopiedToast && (
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded whitespace-nowrap">
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap z-50">
                     URLをコピーしました
+                  
                   </div>
                 )}
-                <Share2 className="w-6 h-6 text-gray-600" />
-              </button>
+              </div>
               <button 
                 className="p-3 hover:bg-gray-100 rounded-full hidden sm:block"
                 onClick={() => setShowSettingsModal(true)}
