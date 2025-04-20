@@ -1,5 +1,5 @@
-import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent, CompositionEvent } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus } from 'lucide-react';
+import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Event {
@@ -37,7 +37,7 @@ interface TimeRange {
 }
 
 interface ApprovalResponse {
-  [key: string]: boolean;
+  [eventId: string]: boolean;
 }
 
 function App() {
@@ -77,7 +77,6 @@ function App() {
   const [approvers, setApprovers] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [copyButtonText, setCopyButtonText] = useState('共有リンクをコピー');
-  const [isComposing, setIsComposing] = useState(false);
   const copyTimeoutRef = useRef<number>();
   const gridRef = useRef<HTMLDivElement>(null);
   
@@ -108,36 +107,29 @@ function App() {
           end: new Date(event.end)
         }));
 
+        // Restore user's previous approvals if they exist
+        if (userName && idParam) {
+          const storedApprovals = localStorage.getItem(`calendar-approvals-${idParam}-${userName}`);
+          if (storedApprovals) {
+            const approvals: ApprovalResponse = JSON.parse(storedApprovals);
+            parsedEvents.forEach(event => {
+              if (approvals[event.id] !== undefined) {
+                event.approvals = event.approvals || {};
+                event.approvals[userName] = approvals[event.id];
+                event.approvedBy = event.approvedBy || [];
+                if (approvals[event.id] && !event.approvedBy.includes(userName)) {
+                  event.approvedBy.push(userName);
+                }
+              }
+            });
+          }
+        }
+
+        setEvents(parsedEvents);
+
         if (idParam) {
           setScheduleId(idParam);
-          
-          // First, load any existing approvals for this schedule
-          if (!isCreator && userName) {
-            const storedApprovals = localStorage.getItem(`calendar-approvals-${idParam}-${userName}`);
-            if (storedApprovals) {
-              const approvals: ApprovalResponse = JSON.parse(storedApprovals);
-              parsedEvents.forEach(event => {
-                if (approvals[event.id] !== undefined) {
-                  event.approvals = {
-                    ...(event.approvals || {}),
-                    [userName]: approvals[event.id]
-                  };
-                  if (approvals[event.id]) {
-                    event.approvedBy = [...(event.approvedBy || []), userName].filter((v, i, a) => a.indexOf(v) === i);
-                  } else {
-                    event.approvedBy = (event.approvedBy || []).filter(name => name !== userName);
-                  }
-                }
-              });
-            }
-          }
-
-          // Save the events with restored approvals
-          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(parsedEvents.map(event => ({
-            ...event,
-            start: event.start.toISOString(),
-            end: event.end.toISOString()
-          }))));
+          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(decodedEvents));
           
           if (titleParam) {
             const decodedTitle = decodeURIComponent(titleParam);
@@ -146,8 +138,6 @@ function App() {
             localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
           }
         }
-
-        setEvents(parsedEvents);
 
         const uniqueApprovers = new Set<string>();
         parsedEvents.forEach(event => {
@@ -158,7 +148,7 @@ function App() {
         });
         setApprovers(Array.from(uniqueApprovers));
 
-        if (!userName && !isCreator) {
+        if (!userName) {
           setShowNameModal(true);
         }
       } catch (error) {
@@ -177,17 +167,7 @@ function App() {
   }, [userName, isCreator]);
 
   useEffect(() => {
-    if (scheduleId && userName && !isCreator && !isComposing) {
-      // Only save approvals when username is confirmed and not during composition
-      const approvals: ApprovalResponse = {};
-      events.forEach(event => {
-        if (event.approvals && event.approvals[userName] !== undefined) {
-          approvals[event.id] = event.approvals[userName];
-        }
-      });
-      localStorage.setItem(`calendar-approvals-${scheduleId}-${userName}`, JSON.stringify(approvals));
-
-      // Also update the full events in localStorage
+    if (scheduleId) {
       const storedEvents: StoredEvent[] = events.map(event => ({
         ...event,
         start: event.start.toISOString(),
@@ -195,17 +175,23 @@ function App() {
       }));
       localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(storedEvents));
     }
-  }, [events, scheduleId, userName, isCreator, isComposing]);
+  }, [events, scheduleId]);
+
+  useEffect(() => {
+    if (scheduleId && scheduleTitle) {
+      localStorage.setItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
+    }
+  }, [scheduleTitle, scheduleId]);
 
   useEffect(() => {
     localStorage.setItem('calendar-time-range', JSON.stringify(timeRange));
   }, [timeRange]);
 
   useEffect(() => {
-    if (userName && !isComposing) {
+    if (userName) {
       localStorage.setItem('calendar-user-name', userName);
     }
-  }, [userName, isComposing]);
+  }, [userName]);
 
   useEffect(() => {
     if (scheduleTitle) {
@@ -295,8 +281,6 @@ function App() {
   };
 
   const handleApproval = (eventId: string, approved: boolean) => {
-    if (!userName || isCreator) return;
-
     setEvents(prevEvents => {
       const updatedEvents = prevEvents.map(event => {
         if (event.id === eventId) {
@@ -309,68 +293,31 @@ function App() {
         return event;
       });
 
-      // Store the updated approvals immediately
-      const newApprovals: ApprovalResponse = {};
-      updatedEvents.forEach(event => {
-        if (event.approvals && event.approvals[userName] !== undefined) {
-          newApprovals[event.id] = event.approvals[userName];
-        }
-      });
-      localStorage.setItem(`calendar-approvals-${scheduleId}-${userName}`, JSON.stringify(newApprovals));
+      // Save user's approvals to localStorage
+      if (scheduleId && userName) {
+        const approvals: ApprovalResponse = {};
+        updatedEvents.forEach(event => {
+          if (event.approvals && event.approvals[userName] !== undefined) {
+            approvals[event.id] = event.approvals[userName];
+          }
+        });
+        localStorage.setItem(`calendar-approvals-${scheduleId}-${userName}`, JSON.stringify(approvals));
+      }
 
       return updatedEvents;
     });
   };
 
   const handleNameSubmit = () => {
-    if (!userName.trim() || isComposing) return;
-    
-    // When setting the username, restore any existing approvals
-    if (scheduleId) {
-      const storedApprovals = localStorage.getItem(`calendar-approvals-${scheduleId}-${userName}`);
-      if (storedApprovals) {
-        const approvals: ApprovalResponse = JSON.parse(storedApprovals);
-        setEvents(prevEvents => 
-          prevEvents.map(event => {
-            if (approvals[event.id] !== undefined) {
-              const newApprovals = {
-                ...(event.approvals || {}),
-                [userName]: approvals[event.id]
-              };
-              const newApprovedBy = approvals[event.id]
-                ? [...(event.approvedBy || []), userName].filter((v, i, a) => a.indexOf(v) === i)
-                : (event.approvedBy || []).filter(name => name !== userName);
-              return { ...event, approvals: newApprovals, approvedBy: newApprovedBy };
-            }
-            return event;
-          })
-        );
-      }
-    }
-    
+    if (!userName.trim()) return;
     setShowNameModal(false);
     shareEvents();
   };
 
   const handleTitleSubmit = () => {
-    if (!scheduleTitle.trim() || isComposing) return;
+    if (!scheduleTitle.trim()) return;
     setDisplayTitle(scheduleTitle);
     setShowTitleModal(false);
-  };
-
-  const handleCompositionStart = () => {
-    setIsComposing(true);
-  };
-
-  const handleCompositionEnd = () => {
-    setIsComposing(false);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, submitHandler: () => void) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
-      e.preventDefault();
-      submitHandler();
-    }
   };
 
   const formatDate = (date: Date) => {
@@ -655,6 +602,17 @@ function App() {
     setEventModal({ ...eventModal, show: false });
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      if (e.currentTarget.form) {
+        e.currentTarget.form.dispatchEvent(new Event('submit', { cancelable: true }));
+      } else {
+        handleCreateEvent();
+      }
+    }
+  };
+
   const calculateOverlappingGroups = (events: Event[], dayEvents: Event[]): Map<string, EventPosition> => {
     const positions = new Map<string, EventPosition>();
     
@@ -805,7 +763,6 @@ function App() {
         isToday: date.toDateString() === new Date().toDateString()
       };
     });
-  
   };
 
   const renderEventCard = (event: Event) => {
@@ -850,7 +807,7 @@ function App() {
               OK
             </button>
             <button
-              className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
+              className={`flex items-center gap-1 px-3  py-1 rounded text-sm ${
                 approval === false
                   ? 'bg-red-100 text-red-700'
                   : 'hover:bg-red-50 text-gray-600'
@@ -886,6 +843,7 @@ function App() {
                     {isCreator && (
                       <button
                         className="p-2 hover:bg-gray-100 rounded-full ml-1"
+                
                         onClick={() => setShowTitleModal(true)}
                         title="タイトルを編集"
                       >
@@ -1184,9 +1142,7 @@ function App() {
                 className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={newEventTitle}
                 onChange={(e) => setNewEventTitle(e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, handleCreateEvent)}
-                onCompositionStart={handleCompositionStart}
-                onCompositionEnd={handleCompositionEnd}
+                onKeyDown={handleKeyDown}
                 autoFocus
               />
               <div className="text-sm text-gray-600 mb-4">
@@ -1223,9 +1179,7 @@ function App() {
                   rows={window.innerWidth < 640 ? 2 : 3}
                   value={newEventNotes}
                   onChange={(e) => setNewEventNotes(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, handleCreateEvent)}
-                  onCompositionStart={handleCompositionStart}
-                  onCompositionEnd={handleCompositionEnd}
+                  onKeyDown={handleKeyDown}
                 />
               </div>
               <div className="flex justify-end gap-3">
@@ -1313,57 +1267,61 @@ function App() {
       {showNameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <UserCircle2 className="w-6 h-6 text-gray-600" />
-                <h3 className="text-xl font-semibold">
-                  名前を入力してください
-                </h3>
-              </div>
-              {approvers.length > 0 && (
-                <div className="mb-4">
-                  <div className="text-sm font-medium text-gray-700 mb-2">
-                    これまでの回答者:
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {approvers.map((approver, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600"
-                      >
-                        {approver}
-                      </span>
-                    ))}
-                  </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleNameSubmit();
+            }}>
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <UserCircle2 className="w-6 h-6 text-gray-600" />
+                  <h3 className="text-xl font-semibold">
+                    名前を入力してください
+                  </h3>
                 </div>
-              )}
-              <input
-                type="text"
-                placeholder="あなたの名前"
-                className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, handleNameSubmit)}
-                onCompositionStart={handleCompositionStart}
-                onCompositionEnd={handleCompositionEnd}
-                autoFocus
-              />
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                  onClick={() => setShowNameModal(false)}
-                >
-                  キャンセル
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                  onClick={handleNameSubmit}
-                  disabled={!userName.trim()}
-                >
-                  共有
-                </button>
+                {approvers.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-sm font-medium text-gray-700 mb-2">
+                      これまでの回答者:
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {approvers.map((approver, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600"
+                        >
+                          {approver}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <input
+                  type="text"
+                  placeholder="あなたの名前"
+                  className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                />
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                    onClick={() => setShowNameModal(false)}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                    disabled={!userName.trim()}
+                  >
+                    共有
+                  </button>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -1371,43 +1329,47 @@ function App() {
       {showTitleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <PenSquare className="w-6 h-6 text-gray-600" />
-                <h3 className="text-xl font-semibold">
-                  スケジュール調整のタイトル
-                </h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleTitleSubmit();
+            }}>
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <PenSquare className="w-6 h-6 text-gray-600" />
+                  <h3 className="text-xl font-semibold">
+                    スケジュール調整のタイトル
+                  </h3>
+                </div>
+                <input
+                  type="text"
+                  placeholder="タイトルを入力"
+                  className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={scheduleTitle}
+                  onChange={(e) => {
+                    setScheduleTitle(e.target.value);
+                    setDisplayTitle(e.target.value);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                />
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                    onClick={() => setShowTitleModal(false)}
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                    disabled={!scheduleTitle.trim()}
+                  >
+                    保存
+                  </button>
+                </div>
               </div>
-              <input
-                type="text"
-                placeholder="タイトルを入力"
-                className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={scheduleTitle}
-                onChange={(e) => {
-                  setScheduleTitle(e.target.value);
-                  setDisplayTitle(e.target.value);
-                }}
-                onKeyDown={(e) => handleKeyDown(e, handleTitleSubmit)}
-                onCompositionStart={handleCompositionStart}
-                onCompositionEnd={handleCompositionEnd}
-                autoFocus
-              />
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                  onClick={() => setShowTitleModal(false)}
-                >
-                  キャンセル
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                  onClick={handleTitleSubmit}
-                  disabled={!scheduleTitle.trim()}
-                >
-                  保存
-                </button>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
