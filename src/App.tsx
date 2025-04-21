@@ -79,6 +79,7 @@ function App() {
   const [copyButtonText, setCopyButtonText] = useState('共有リンクをコピー');
   const copyTimeoutRef = useRef<number>();
   const gridRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
   
   const days = ['日', '月', '火', '水', '木', '金', '土'];
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -107,7 +108,6 @@ function App() {
           end: new Date(event.end)
         }));
 
-        // Restore user's previous approvals if they exist
         if (userName && idParam) {
           const storedApprovals = localStorage.getItem(`calendar-approvals-${idParam}-${userName}`);
           if (storedApprovals) {
@@ -159,10 +159,17 @@ function App() {
       }
     } else if (idParam) {
       loadFromLocalStorage(idParam);
-    } else if (isCreator) {
+    } else if (isCreator && isInitialMount.current) {
       const newScheduleId = uuidv4();
       setScheduleId(newScheduleId);
+      
+      // Store schedule ID in localStorage
+      const storedScheduleIds = JSON.parse(localStorage.getItem('calendar-schedule-ids') || '[]');
+      storedScheduleIds.push(newScheduleId);
+      localStorage.setItem('calendar-schedule-ids', JSON.stringify(storedScheduleIds));
+      
       setShowTitleModal(true);
+      isInitialMount.current = false;
     }
   }, [userName, isCreator]);
 
@@ -293,7 +300,6 @@ function App() {
         return event;
       });
 
-      // Save user's approvals to localStorage
       if (scheduleId && userName) {
         const approvals: ApprovalResponse = {};
         updatedEvents.forEach(event => {
@@ -807,7 +813,7 @@ function App() {
               OK
             </button>
             <button
-              className={`flex items-center gap-1 px-3  py-1 rounded text-sm ${
+              className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
                 approval === false
                   ? 'bg-red-100 text-red-700'
                   : 'hover:bg-red-50 text-gray-600'
@@ -843,7 +849,6 @@ function App() {
                     {isCreator && (
                       <button
                         className="p-2 hover:bg-gray-100 rounded-full ml-1"
-                
                         onClick={() => setShowTitleModal(true)}
                         title="タイトルを編集"
                       >
