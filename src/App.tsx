@@ -844,7 +844,6 @@ function App() {
       <div className="flex-1 flex flex-col">
         <header className="flex flex-col">
           <div className="h-16 px-4 border-b flex items-center justify-between">
-            
             <div className="flex items-center gap-2">
               <button className="p-3 hover:bg-gray-100 rounded-full">
                 <Menu className="w-6 h-6 text-gray-600" />
@@ -889,7 +888,7 @@ function App() {
                   onClick={handleShareEvents}
                   title={copyButtonText}
                 >
-                  <Share2 className="w-6 h-6 text-gray-600" />
+                  <Copy className="w-6 h-6 text-gray-600" />
                 </button>
                 {showCopiedToast && (
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap z-50">
