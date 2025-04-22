@@ -232,10 +232,10 @@ function App() {
       return;
     }
 
-    shareEvents();
+    shareEvents(true);
   };
 
-  const shareEvents = async () => {
+  const shareEvents = async (shouldCopy: boolean = false) => {
     const url = new URL(window.location.href);
     url.searchParams.set('id', scheduleId);
     
@@ -265,30 +265,32 @@ function App() {
       url.searchParams.set('title', encodeURIComponent(scheduleTitle));
     }
     
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      setCopyButtonText('コピーしました！');
-      setShowCopiedToast(true);
-      
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
+    if (shouldCopy) {
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        setCopyButtonText('コピーしました！');
+        setShowCopiedToast(true);
+        
+        if (copyTimeoutRef.current) {
+          window.clearTimeout(copyTimeoutRef.current);
+        }
+        
+        copyTimeoutRef.current = window.setTimeout(() => {
+          setCopyButtonText('共有リンクをコピー');
+          setShowCopiedToast(false);
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to copy URL:', error);
+        setCopyButtonText('コピーに失敗しました');
+        
+        if (copyTimeoutRef.current) {
+          window.clearTimeout(copyTimeoutRef.current);
+        }
+        
+        copyTimeoutRef.current = window.setTimeout(() => {
+          setCopyButtonText('共有リンクをコピー');
+        }, 2000);
       }
-      
-      copyTimeoutRef.current = window.setTimeout(() => {
-        setCopyButtonText('共有リンクをコピー');
-        setShowCopiedToast(false);
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to copy URL:', error);
-      setCopyButtonText('コピーに失敗しました');
-      
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
-      }
-      
-      copyTimeoutRef.current = window.setTimeout(() => {
-        setCopyButtonText('共有リンクをコピー');
-      }, 2000);
     }
   };
 
@@ -322,7 +324,7 @@ function App() {
   const handleNameSubmit = () => {
     if (!userName.trim()) return;
     setShowNameModal(false);
-    shareEvents();
+    shareEvents(true);
   };
 
   const handleTitleSubmit = () => {
@@ -809,7 +811,7 @@ function App() {
                   ? 'bg-green-100 text-green-700'
                   : 'hover:bg-green-50 text-gray-600'
               }`}
-              onClick={(e) => {
+              onClick={(e)=> {
                 e.stopPropagation();
                 handleApproval(event.id, true);
               }}
@@ -842,6 +844,7 @@ function App() {
       <div className="flex-1 flex flex-col">
         <header className="flex flex-col">
           <div className="h-16 px-4 border-b flex items-center justify-between">
+            
             <div className="flex items-center gap-2">
               <button className="p-3 hover:bg-gray-100 rounded-full">
                 <Menu className="w-6 h-6 text-gray-600" />
