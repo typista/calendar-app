@@ -42,7 +42,7 @@ interface ApprovalResponse {
 
 interface ScheduleHistory {
   events: StoredEvent[];
-  sharedAt: string;
+  sharedAt?: string;
 }
 
 function App() {
@@ -56,6 +56,7 @@ function App() {
   });
   const [showScheduleHistoryModal, setShowScheduleHistoryModal] = useState(false);
   const [showAnsweredModal, setShowAnsweredModal] = useState(false);
+  const [hasAnsweredSchedules, setHasAnsweredSchedules] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -73,6 +74,7 @@ function App() {
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [displayTitle, setDisplayTitle] = useState('');
+  const [isScheduleMaster, setIsScheduleMaster] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>(() => {
     const stored = localStorage.getItem('calendar-time-range');
     return stored ? JSON.parse(stored) : { start: 8, end: 21 };
@@ -119,7 +121,6 @@ function App() {
           end: new Date(event.end)
         }));
 
-        // Restore user's previous approvals if they exist
         if (userName && idParam) {
           const storedApprovals = localStorage.getItem(`calendar-approvals-${idParam}-${userName}`);
           if (storedApprovals) {
@@ -141,11 +142,11 @@ function App() {
 
         if (idParam) {
           setScheduleId(idParam);
-          const scheduleData: ScheduleHistory = {
+          const storedData: ScheduleHistory = {
             events: decodedEvents,
             sharedAt: new Date().toISOString()
           };
-          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(scheduleData));
+          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(storedData));
           
           if (titleParam) {
             const decodedTitle = decodeURIComponent(titleParam);
@@ -191,19 +192,15 @@ function App() {
         end: event.end.toISOString()
       }));
 
-      // Only update events without sharedAt timestamp
       const existingData = localStorage.getItem(`calendar-events-${scheduleId}`);
-      if (existingData) {
-        const parsedData = JSON.parse(existingData) as ScheduleHistory;
-        localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
-          events: storedEvents,
-          sharedAt: parsedData.sharedAt
-        }));
-      } else {
-        localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
-          events: storedEvents
-        }));
-      }
+      const existingSchedule: ScheduleHistory | null = existingData ? JSON.parse(existingData) : null;
+
+      const scheduleData: ScheduleHistory = {
+        events: storedEvents,
+        sharedAt: existingSchedule?.sharedAt
+      };
+
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(scheduleData));
     }
   }, [events, scheduleId]);
 
@@ -235,13 +232,23 @@ function App() {
     }
   }, [scheduleIds]);
 
+  useEffect(() => {
+    const storedData = localStorage.getItem(`calendar-events-${scheduleId}`);
+    if (storedData) {
+      const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
+      setHasAnsweredSchedules(!!sharedAt);
+    } else {
+      setHasAnsweredSchedules(false);
+    }
+  }, [scheduleId]);
+
   const loadFromLocalStorage = (id: string) => {
     const storedData = localStorage.getItem(`calendar-events-${id}`);
     const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
     
     if (storedData) {
-      const { events: parsedEvents }: ScheduleHistory = JSON.parse(storedData);
-      setEvents(parsedEvents.map(event => ({
+      const { events: storedEvents }: ScheduleHistory = JSON.parse(storedData);
+      setEvents(storedEvents.map(event => ({
         ...event,
         start: new Date(event.start),
         end: new Date(event.end)
@@ -293,18 +300,6 @@ function App() {
       await navigator.clipboard.writeText(url.toString());
       setCopyButtonText('コピーしました！');
       setShowCopiedToast(true);
-
-      // Save events with sharedAt timestamp
-      const scheduleData: ScheduleHistory = {
-        events: storedEvents,
-        sharedAt: new Date().toISOString()
-      };
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(scheduleData));
-
-      // Add to schedule IDs if not already present
-      if (!scheduleIds.includes(scheduleId)) {
-        setScheduleIds(prev => [...prev, scheduleId]);
-      }
       
       if (copyTimeoutRef.current) {
         window.clearTimeout(copyTimeoutRef.current);
@@ -314,6 +309,11 @@ function App() {
         setCopyButtonText('共有リンクをコピー');
         setShowCopiedToast(false);
       }, 2000);
+
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
+        events: storedEvents,
+        sharedAt: new Date().toISOString()
+      }));
     } catch (error) {
       console.error('Failed to copy URL:', error);
       setCopyButtonText('コピーに失敗しました');
@@ -325,48 +325,6 @@ function App() {
       copyTimeoutRef.current = window.setTimeout(() => {
         setCopyButtonText('共有リンクをコピー');
       }, 2000);
-    }
-  };
-
-  const handleScheduleHistoryClick = () => {
-    setShowScheduleHistoryModal(true);
-  };
-
-  const handleAnsweredSchedulesClick = () => {
-    setShowAnsweredModal(true);
-  };
-
-  const handleCopyHistoryUrl = async (id: string) => {
-    const storedData = localStorage.getItem(`calendar-events-${id}`);
-    const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
-    
-    if (!storedData) return;
-    
-    const { events: storedEvents }: ScheduleHistory = JSON.parse(storedData);
-    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
-    
-    const url = new URL(window.location.href);
-    url.searchParams.set('events', encodedEvents);
-    url.searchParams.set('id', id);
-    if (storedTitle) {
-      url.searchParams.set('title', encodeURIComponent(storedTitle));
-    }
-    
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      setCopyButtonText('コピーしました！');
-      setShowCopiedToast(true);
-      
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
-      }
-      
-      copyTimeoutRef.current = window.setTimeout(() => {
-        setCopyButtonText('共有リンクをコピー');
-        setShowCopiedToast(false);
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to copy URL:', error);
     }
   };
 
@@ -383,7 +341,6 @@ function App() {
         return event;
       });
 
-      // Save user's approvals to localStorage
       if (scheduleId && userName) {
         const approvals: ApprovalResponse = {};
         updatedEvents.forEach(event => {
@@ -408,6 +365,52 @@ function App() {
     if (!scheduleTitle.trim()) return;
     setDisplayTitle(scheduleTitle);
     setShowTitleModal(false);
+    setIsScheduleMaster(true);
+    
+    const updatedIds = Array.from(new Set([...scheduleIds, scheduleId]));
+    setScheduleIds(updatedIds);
+    localStorage.setItem('calendar-schedule-ids', JSON.stringify(updatedIds));
+  };
+
+  const handleScheduleHistoryClick = () => {
+    setShowScheduleHistoryModal(true);
+  };
+
+  const handleAnsweredSchedulesClick = () => {
+    setShowAnsweredModal(true);
+  };
+
+  const handleCopyHistoryUrl = async (id: string) => {
+    const storedData = localStorage.getItem(`calendar-events-${id}`);
+    const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
+    
+    if (storedData) {
+      const { events: storedEvents }: ScheduleHistory = JSON.parse(storedData);
+      const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
+      const url = new URL(window.location.href);
+      url.searchParams.set('events', encodedEvents);
+      url.searchParams.set('id', id);
+      if (storedTitle) {
+        url.searchParams.set('title', encodeURIComponent(storedTitle));
+      }
+      
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        setCopyButtonText('コピーしました！');
+        setShowCopiedToast(true);
+        
+        if (copyTimeoutRef.current) {
+          window.clearTimeout(copyTimeoutRef.current);
+        }
+        
+        copyTimeoutRef.current = window.setTimeout(() => {
+          setCopyButtonText('共有リンクをコピー');
+          setShowCopiedToast(false);
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to copy URL:', error);
+      }
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -802,6 +805,7 @@ function App() {
           <div className="text-xs font-medium">
             {formatEventTime(event.start)} 〜 {formatEventTime(event.end)}
           </div>
+          
           <div className="font-medium">{event.title}</div>
           {event.notes && (
             <div className="text-xs opacity-90 mt-1 line-clamp-2">{event.notes}</div>
@@ -927,7 +931,7 @@ function App() {
                 <Menu className="w-6 h-6 text-gray-600" />
               </button>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl text-gray-800 ml-1">カレンダー</h1>
+                <h1 className="text-xl text-gray-800">カレンダー</h1>
                 {displayTitle && (
                   <span className="text-gray-600">
                     {displayTitle}
@@ -962,14 +966,14 @@ function App() {
               </button>
               <div className="relative">
                 <button 
-                  className="p-3 hover:bg-gray-100 rounded-full relative hidden sm:block"
+                  className="p-3 hover:bg-gray-100 rounded-full hidden sm:block"
                   onClick={handleShareEvents}
                   title={copyButtonText}
                 >
                   <Share2 className="w-6 h-6 text-gray-600" />
                 </button>
                 {showCopiedToast && (
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap z-50">
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap">
                     URLをコピーしました
                   </div>
                 )}
@@ -983,7 +987,7 @@ function App() {
             </div>
           </div>
 
-          <div className="h-16 px-4 sm:px-6 border-b flex items-center justify-between">
+          <div className="h-16 px-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
               <button 
                 className="px-3 sm:px-6 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
@@ -1006,6 +1010,8 @@ function App() {
                 </button>
               </div>
               <h2 className="text-base sm:text-xl">{formatDate(currentDate)}</h2>
+            </div>
+            <div className="flex items-center gap-2">
               {scheduleIds.length > 0 && (
                 <button
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
@@ -1014,7 +1020,7 @@ function App() {
                   作成済みの候補日程
                 </button>
               )}
-              {!scheduleIds.includes(scheduleId) && localStorage.getItem(`calendar-events-${scheduleId}`) && (
+              {!scheduleIds.includes(scheduleId) && hasAnsweredSchedules && (
                 <button
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
                   onClick={handleAnsweredSchedulesClick}
@@ -1022,33 +1028,30 @@ function App() {
                   回答済みの候補日程
                 </button>
               )}
+              {isCreator && (
+                <button 
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
+                  onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
+                >
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">予定を作成</span>
+                  <span className="sm:hidden">作成</span>
+                </button>
+              )}
             </div>
-            {isCreator && (
-              <button 
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
-                onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">予定を作成</span>
-                <span className="sm:hidden">作成</span>
-              </button>
-            )}
           </div>
         </header>
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="grid grid-cols-8 border-b">
-            <div className="border-r h-14" />
+            <div className="border-r" />
             {days.map((day, index) => {
               const dayInfo = getDayNumbers()[index];
               return (
                 <div key={day} className="border-r">
-                  <div className="h-14 px-1 sm:px-2 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="h-14 px-1 sm:px-2 flex flex-col items-center justify-center">
                     <div className="text-xs sm:text-sm text-gray-500">{day}</div>
-                    <div className={`
-                      text-base sm:text-xl
-                      ${dayInfo.isToday ? 'w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center' : ''}
-                    `}>
+                    <div className={`text-base sm:text-xl ${dayInfo.isToday ? 'bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center' : ''}`}>
                       {dayInfo.number}
                     </div>
                   </div>
@@ -1059,25 +1062,21 @@ function App() {
 
           <div 
             ref={gridRef}
-            className="flex-1 grid grid-cols-8 overflow-y-auto relative select-none"
+            className="relative flex-1 grid grid-cols-8"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
             <div className="border-r">
               {hours.map((hour) => (
-                <div key={hour} className="h-12 text-right pr-2">
-                  <span className="text-xs sm:text-sm text-gray-500 relative -top-2">
-                    {hour}:00
-                  </span>
+                <div key={hour} className="h-12 text-right pr-2 text-sm text-gray-500">
+                  {hour}:00
                 </div>
               ))}
             </div>
-
             {days.map((day, index) => {
               const weekStart = new Date(currentDate);
               weekStart.setDate(weekStart.getDate() - weekStart.getDay());
@@ -1090,16 +1089,14 @@ function App() {
                     {hours.map((hour) => {
                       const timeSlotDate = new Date(currentDay);
                       timeSlotDate.setHours(hour, 0, 0, 0);
-                      const isPast = isPastTime(timeSlotDate);
+                      const isPastSlot = isPastTime(timeSlotDate);
 
                       return (
                         <div 
                           key={hour} 
-                          className={`
-                            h-12 border-b border-gray-100
-                            ${!isTimeInRange(hour) ? 'bg-gray-50 hidden sm:block' : ''}
-                            ${isPast ? 'bg-gray-100' : ''}
-                          `}
+                          className={`h-12 border-b border-gray-100 ${
+                            !isTimeInRange(hour) ? 'bg-gray-50 hidden sm:block' : ''
+                          } ${isPastSlot ? 'bg-gray-100' : ''}`}
                         />
                       );
                     })}
@@ -1144,38 +1141,38 @@ function App() {
         </div>
       </div>
 
-      <div className="hidden md:block w-[300px] border-l">
+      <div className="hidden md:block w-80 border-l">
         <div className="h-16 px-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-semibold">予定一覧</h3>
-          <div className="flex items-center gap-4">
+          <h3 className="font-medium">予定一覧</h3>
+          <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">{events.length}件</span>
             <button 
               className="p-2 hover:bg-gray-100 rounded-full"
               onClick={handleShareEvents}
               title={copyButtonText}
             >
-              <Copy className="w-5 h-5 text-gray-600" />
+              <Share2 className="w-5 h-5 text-gray-600" />
             </button>
           </div>
         </div>
-        <div className="overflow-y-auto h-[calc(100vh-64px)]">
-          {events.length === 0 ? (
-            <div className="text-gray-500 text-center py-4">
-              予定はありません
-            </div>
-          ) : (
-            <div className="p-4 space-y-4">
-              {[...events]
+        <div className="h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="p-4 space-y-4">
+            {events.length === 0 ? (
+              <div className="text-center text-gray-500">
+                予定はありません
+              </div>
+            ) : (
+              events
                 .sort((a, b) => a.start.getTime() - b.start.getTime())
-                .map(event => renderEventCard(event))}
-            </div>
-          )}
+                .map(event => renderEventCard(event))
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t shadow-lg z-40">
+      <div className="fixed inset-x-0 bottom-0 md:hidden">
         <div 
-          className="flex items-center justify-between px-4 py-2"
+          className="bg-white border-t shadow-lg px-4 py-3 flex items-center justify-between"
           onClick={() => setShowBottomSheet(true)}
         >
           <div className="flex items-center gap-2">
@@ -1188,133 +1185,53 @@ function App() {
         </div>
       </div>
 
-      <div 
-        className={`
-          fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden
-          ${showBottomSheet ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-        `}
-        onClick={() => setShowBottomSheet(false)}
-      >
+      {showBottomSheet && (
         <div 
-          className={`
-            fixed inset-x-0 bottom-0 bg-white rounded-t-xl transition-transform duration-300 ease-out
-            ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}
-          `}
-          onClick={e => e.stopPropagation()}
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden"
+          onClick={() => setShowBottomSheet(false)}
         >
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="text-lg font-semibold">予定一覧</h3>
-            <button 
-              className="p-2 hover:bg-gray-100 rounded-full"
-              onClick={() => setShowBottomSheet(false)}
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-          <div className="max-h-[70vh] overflow-y-auto p-4">
-            {events.length === 0 ? (
-              <div className="text-gray-500 text-center py-4">
-                予定はありません
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {[...events]
+          <div 
+            className="absolute inset-x-0 bottom-0 bg-white rounded-t-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-medium">予定一覧</h3>
+              <button 
+                className="p-2 hover:bg-gray-100 rounded-full"
+                onClick={() => setShowBottomSheet(false)}
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-4 space-y-4">
+              {events.length === 0 ? (
+                <div className="text-center text-gray-500">
+                  予定はありません
+                </div>
+              ) : (
+                events
                   .sort((a, b) => a.start.getTime() - b.start.getTime())
-                  .map(event => renderEventCard(event))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {eventModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 sm:pt-32 px-4 sm:px-0 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-[448px] sm:translate-y-0 -translate-y-8">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">
-                  {eventModal.event ? '予定を編集' : '予定を追加'}
-                </h3>
-                <button 
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                  onClick={() => setEventModal({ ...eventModal, show: false })}
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-              <input
-                type="text"
-                placeholder="タイトルを追加"
-                className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={newEventTitle}
-                onChange={(e) => setNewEventTitle(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-              />
-              <div className="text-sm text-gray-600 mb-4">
-                <div className="sm:block flex items-center gap-2">
-                  <span>{formatEventDate(eventModal.start)}</span>
-                  <span>{formatEventTime(eventModal.start)} 〜 {formatEventTime(eventModal.end)}</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <div className="sm:block flex items-center gap-3">
-                  <label className="block text-sm font-medium text-gray-700 sm:mb-2 whitespace-nowrap">
-                    色を選択
-                  </label>
-                  <div className="flex gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color}
-                        className={`w-6 h-6 rounded-full border-2 ${
-                          color === newEventColor ? 'border-gray-400' : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setNewEventColor(color)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  メモ
-                </label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={window.innerWidth < 640 ? 2 : 3}
-                  value={newEventNotes}
-                  onChange={(e) => setNewEventNotes(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                  onClick={() => setEventModal({ ...eventModal, show: false })}
-                >
-                  キャンセル
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  onClick={handleCreateEvent}
-                >
-                  保存
-                </button>
-              </div>
+                  .map(event => renderEventCard(event))
+              )}
             </div>
           </div>
         </div>
       )}
 
       {showSettingsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowSettingsModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg w-full max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-gray-600" />
-                  <h3 className="text-xl font-semibold">表示時間の設定</h3>
+                  <Clock className="w-6 h-6 text-gray-600" />
+                  <h3 className="text-xl font-medium">表示時間の設定</h3>
                 </div>
                 <button 
                   className="p-2 hover:bg-gray-100 rounded-full"
@@ -1329,7 +1246,7 @@ function App() {
                     開始時刻
                   </label>
                   <select
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     value={timeRange.start}
                     onChange={(e) => setTimeRange(prev => ({ ...prev, start: parseInt(e.target.value) }))}
                   >
@@ -1345,7 +1262,7 @@ function App() {
                     終了時刻
                   </label>
                   <select
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     value={timeRange.end}
                     onChange={(e) => setTimeRange(prev => ({ ...prev, end: parseInt(e.target.value) }))}
                   >
@@ -1357,7 +1274,7 @@ function App() {
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end mt-6">
+              <div className="mt-6 flex justify-end">
                 <button
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   onClick={() => setShowSettingsModal(false)}
@@ -1372,7 +1289,7 @@ function App() {
 
       {showNameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="bg-white rounded-lg w-full max-w-md mx-4">
             <form onSubmit={(e) => {
               e.preventDefault();
               handleNameSubmit();
@@ -1380,7 +1297,7 @@ function App() {
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <UserCircle2 className="w-6 h-6 text-gray-600" />
-                  <h3 className="text-xl font-semibold">
+                  <h3 className="text-xl font-medium">
                     名前を入力してください
                   </h3>
                 </div>
@@ -1404,13 +1321,13 @@ function App() {
                 <input
                   type="text"
                   placeholder="あなたの名前"
-                  className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   onKeyDown={handleKeyDown}
                   autoFocus
                 />
-                <div className="flex justify-end gap-3">
+                <div className="mt-6 flex justify-end gap-3">
                   <button
                     type="button"
                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
@@ -1423,7 +1340,7 @@ function App() {
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
                     disabled={!userName.trim()}
                   >
-                    共有
+                    OK
                   </button>
                 </div>
               </div>
@@ -1434,7 +1351,7 @@ function App() {
 
       {showTitleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="bg-white rounded-lg w-full max-w-md mx-4">
             <form onSubmit={(e) => {
               e.preventDefault();
               handleTitleSubmit();
@@ -1442,14 +1359,14 @@ function App() {
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <PenSquare className="w-6 h-6 text-gray-600" />
-                  <h3 className="text-xl font-semibold">
+                  <h3 className="text-xl font-medium">
                     スケジュール調整のタイトル
                   </h3>
                 </div>
                 <input
                   type="text"
                   placeholder="タイトルを入力"
-                  className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   value={scheduleTitle}
                   onChange={(e) => {
                     setScheduleTitle(e.target.value);
@@ -1458,7 +1375,7 @@ function App() {
                   onKeyDown={handleKeyDown}
                   autoFocus
                 />
-                <div className="flex justify-end gap-3">
+                <div className="mt-6 flex justify-end gap-3">
                   <button
                     type="button"
                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
@@ -1481,11 +1398,17 @@ function App() {
       )}
 
       {showScheduleHistoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50"
+          onClick={() => setShowScheduleHistoryModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg w-full max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">作成済みの候補日程</h3>
+                <h3 className="text-xl font-medium">作成済みの候補日程</h3>
                 <button 
                   className="p-2 hover:bg-gray-100 rounded-full"
                   onClick={() => setShowScheduleHistoryModal(false)}
@@ -1493,31 +1416,38 @@ function App() {
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
-              <div className="max-h-[60vh] overflow-y-auto">
+              <div className="max-h-[60vh] overflow-y-auto divide-y">
                 {scheduleIds.map(id => {
                   const storedData = localStorage.getItem(`calendar-events-${id}`);
                   if (!storedData) return null;
 
-                  const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
-                  const title = localStorage.getItem(`calendar-schedule-title-${id}`) || '無題の候補日程';
-                  const shareDate = new Date(sharedAt);
+                  try {
+                    const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
+                    const title = localStorage.getItem(`calendar-schedule-title-${id}`) || '無題の候補日程';
+                    const date = new Date(sharedAt);
+                    
+                    // Skip invalid dates
+                    if (isNaN(date.getTime())) return null;
 
-                  return (
-                    <div key={id} className="flex items-center justify-between py-3">
-                      <div>
-                        <div className="font-medium">{title}</div>
-                        <div className="text-sm text-gray-600">
-                          {shareDate.toLocaleString('ja-JP')}
+                    return (
+                      <div key={id} className="py-4 flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{title}</div>
+                          <div className="text-sm text-gray-600">
+                            {date.toLocaleString('ja-JP')}
+                          </div>
                         </div>
+                        <button
+                          className="p-2 hover:bg-gray-100 rounded-full"
+                          onClick={() => handleCopyHistoryUrl(id)}
+                        >
+                          <Copy className="w-5 h-5 text-gray-600" />
+                        </button>
                       </div>
-                      <button
-                        className="p-2 hover:bg-gray-100 rounded-full"
-                        onClick={() => handleCopyHistoryUrl(id)}
-                      >
-                        <Copy className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </div>
-                  );
+                    );
+                  } catch (error) {
+                    return null; // Skip any entries that fail to parse
+                  }
                 })}
               </div>
             </div>
@@ -1526,11 +1456,17 @@ function App() {
       )}
 
       {showAnsweredModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50"
+          onClick={() => setShowAnsweredModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg w-full max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold">回答済みの候補日程</h3>
+                <h3 className="text-xl font-medium">回答済みの候補日程</h3>
                 <button 
                   className="p-2 hover:bg-gray-100 rounded-full"
                   onClick={() => setShowAnsweredModal(false)}
@@ -1544,17 +1480,15 @@ function App() {
                   if (!storedData) return null;
 
                   const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
-                  if (!sharedAt) return null;
-
                   const title = localStorage.getItem(`calendar-schedule-title-${scheduleId}`) || '無題の候補日程';
-                  const shareDate = new Date(sharedAt);
+                  const date = new Date(sharedAt);
 
                   return (
-                    <div className="flex items-center justify-between py-3">
+                    <div className="py-4 flex items-center justify-between">
                       <div>
                         <div className="font-medium">{title}</div>
                         <div className="text-sm text-gray-600">
-                          {shareDate.toLocaleString('ja-JP')}
+                          {date.toLocaleString('ja-JP')}
                         </div>
                       </div>
                       <button
@@ -1566,6 +1500,91 @@ function App() {
                     </div>
                   );
                 })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {eventModal.show && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50"
+          onClick={() => setEventModal({ ...eventModal, show: false })}
+        >
+          <div 
+            className="bg-white rounded-lg w-full max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-medium">
+                  {eventModal.event ? '予定を編集' : '予定を追加'}
+                </h3>
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  onClick={() => setEventModal({ ...eventModal, show: false })}
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="タイトルを入力"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+                value={newEventTitle}
+                onChange={(e) => setNewEventTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus
+              />
+              <div className="text-sm text-gray-600 mb-4">
+                {formatEventDate(eventModal.start)}
+                <br />
+                {formatEventTime(eventModal.start)} 〜 {formatEventTime(eventModal.end)}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  色を選択
+                </label>
+                
+                <div className="flex gap-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      className={`w-6 h-6 rounded-full border-2 ${
+                        color === newEventColor ? 'border-gray-400' : 'border-transparent'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setNewEventColor(color)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  メモ
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  rows={3}
+                  value={newEventNotes}
+                  onChange={(e) => setNewEventNotes(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                  onClick={() => setEventModal({ ...eventModal, show: false })}
+                >
+                  キャンセル
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                  onClick={handleCreateEvent}
+                  disabled={!newEventTitle.trim()}
+                >
+                  保存
+                </button>
               </div>
             </div>
           </div>
