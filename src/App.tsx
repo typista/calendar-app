@@ -101,6 +101,13 @@ function App() {
     const titleParam = params.get('title');
     const idParam = params.get('id');
     
+    if (titleParam && idParam) {
+      const decodedTitle = decodeURIComponent(titleParam);
+      setScheduleTitle(decodedTitle);
+      setDisplayTitle(decodedTitle);
+      localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
+    }
+    
     if (eventsParam) {
       try {
         const decodedEvents = JSON.parse(decodeURIComponent(atob(eventsParam)));
@@ -132,13 +139,6 @@ function App() {
         if (idParam) {
           setScheduleId(idParam);
           localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(decodedEvents));
-          
-          if (titleParam) {
-            const decodedTitle = decodeURIComponent(titleParam);
-            setScheduleTitle(decodedTitle);
-            setDisplayTitle(decodedTitle);
-            localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
-          }
         }
 
         const uniqueApprovers = new Set<string>();
