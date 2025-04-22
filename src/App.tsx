@@ -259,6 +259,13 @@ function App() {
       
       const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
       url.searchParams.set('events', encodedEvents);
+
+      // Store the share timestamp
+      const shareData = {
+        events: storedEvents,
+        sharedAt: new Date().toISOString()
+      };
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(shareData));
     }
     
     if (scheduleTitle) {
