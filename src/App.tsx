@@ -929,16 +929,44 @@ function App() {
               </div>
               <h2 className="text-base sm:text-xl">{formatDate(currentDate)}</h2>
             </div>
-            {isCreator && (
-              <button 
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
-                onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">予定を作成</span>
-                <span className="sm:hidden">作成</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {(() => {
+                const storedScheduleIds = JSON.parse(localStorage.getItem('calendar-schedule-ids') || '[]');
+                const hasScheduleIds = storedScheduleIds.length > 0;
+                const hasCurrentSchedule = localStorage.getItem(`calendar-events-${scheduleId}`);
+                
+                if (hasScheduleIds) {
+                  return (
+                    <button 
+                      className="hidden sm:flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
+                      onClick={() => console.log('作成済みの候補日程')}
+                    >
+                      作成済みの候補日程
+                    </button>
+                  );
+                } else if (hasCurrentSchedule && !hasScheduleIds) {
+                  return (
+                    <button 
+                      className="hidden sm:flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
+                      onClick={() => console.log('回答済みの候補日程')}
+                    >
+                      回答済みの候補日程
+                    </button>
+                  );
+                }
+                return null;
+              })()}
+              {isCreator && (
+                <button 
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
+                  onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
+                >
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">予定を作成</span>
+                  <span className="sm:hidden">作成</span>
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
