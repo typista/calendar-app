@@ -68,7 +68,9 @@ function App() {
   });
   const [isCreator, setIsCreator] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return !params.get('events');
+    const hasEvents = params.get('events');
+    const hasId = params.get('id');
+    return !hasEvents || !hasId;
   });
   const [userName, setUserName] = useState(() => {
     const stored = localStorage.getItem('calendar-user-name');
@@ -163,7 +165,6 @@ function App() {
       const newScheduleId = uuidv4();
       setScheduleId(newScheduleId);
       
-      // Store schedule ID in localStorage
       const storedScheduleIds = JSON.parse(localStorage.getItem('calendar-schedule-ids') || '[]');
       storedScheduleIds.push(newScheduleId);
       localStorage.setItem('calendar-schedule-ids', JSON.stringify(storedScheduleIds));
@@ -235,27 +236,31 @@ function App() {
   };
 
   const shareEvents = async () => {
-    const filteredEvents = events.filter(event => {
-      if (event.createdBy === userName) return true;
-      if (!event.approvals) return false;
-      
-      const approvalCount = Object.values(event.approvals).filter(v => v).length;
-      const position = approvers.length + (approvers.includes(userName) ? 0 : 1);
-      
-      return approvalCount >= position - 1;
-    });
-
-    const storedEvents: StoredEvent[] = filteredEvents.map(event => ({
-      ...event,
-      start: event.start.toISOString(),
-      end: event.end.toISOString(),
-      approvedBy: [...(event.approvedBy || []), userName]
-    }));
-    
-    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
     const url = new URL(window.location.href);
-    url.searchParams.set('events', encodedEvents);
     url.searchParams.set('id', scheduleId);
+    
+    if (events.length > 0) {
+      const filteredEvents = events.filter(event => {
+        if (event.createdBy === userName) return true;
+        if (!event.approvals) return false;
+        
+        const approvalCount = Object.values(event.approvals).filter(v => v).length;
+        const position = approvers.length + (approvers.includes(userName) ? 0 : 1);
+        
+        return approvalCount >= position - 1;
+      });
+
+      const storedEvents: StoredEvent[] = filteredEvents.map(event => ({
+        ...event,
+        start: event.start.toISOString(),
+        end: event.end.toISOString(),
+        approvedBy: [...(event.approvedBy || []), userName]
+      }));
+      
+      const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
+      url.searchParams.set('events', encodedEvents);
+    }
+    
     if (scheduleTitle) {
       url.searchParams.set('title', encodeURIComponent(scheduleTitle));
     }
