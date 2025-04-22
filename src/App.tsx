@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Event {
@@ -1053,15 +1053,8 @@ function App() {
       <div className="hidden md:block w-[300px] border-l">
         <div className="h-16 px-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold">候補日程</h3>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center">
             <span className="text-sm text-gray-600">{events.length}件</span>
-            <button 
-              className="p-2 hover:bg-gray-100 rounded-full"
-              onClick={handleShareEvents}
-              title={copyButtonText}
-            >
-              <Copy className="w-5 h-5 text-gray-600" />
-            </button>
           </div>
         </div>
         <div className="overflow-y-auto h-[calc(100vh-64px)]">
