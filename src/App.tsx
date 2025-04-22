@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Event {
@@ -50,6 +50,12 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id') || '';
   });
+  const [scheduleIds, setScheduleIds] = useState<string[]>(() => {
+    const stored = localStorage.getItem('calendar-schedule-ids');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [showScheduleHistoryModal, setShowScheduleHistoryModal] = useState(false);
+  const [showAnsweredModal, setShowAnsweredModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -65,7 +71,6 @@ function App() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [displayTitle, setDisplayTitle] = useState('');
   const [timeRange, setTimeRange] = useState<TimeRange>(() => {
@@ -83,10 +88,6 @@ function App() {
   const [approvers, setApprovers] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [copyButtonText, setCopyButtonText] = useState('共有リンクをコピー');
-  const [scheduleIds, setScheduleIds] = useState<string[]>(() => {
-    const stored = localStorage.getItem('calendar-schedule-ids');
-    return stored ? JSON.parse(stored) : [];
-  });
   const copyTimeoutRef = useRef<number>();
   const gridRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
@@ -118,6 +119,7 @@ function App() {
           end: new Date(event.end)
         }));
 
+        // Restore user's previous approvals if they exist
         if (userName && idParam) {
           const storedApprovals = localStorage.getItem(`calendar-approvals-${idParam}-${userName}`);
           if (storedApprovals) {
@@ -139,10 +141,11 @@ function App() {
 
         if (idParam) {
           setScheduleId(idParam);
-          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify({
+          const scheduleData: ScheduleHistory = {
             events: decodedEvents,
             sharedAt: new Date().toISOString()
-          }));
+          };
+          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(scheduleData));
           
           if (titleParam) {
             const decodedTitle = decodeURIComponent(titleParam);
@@ -187,10 +190,20 @@ function App() {
         start: event.start.toISOString(),
         end: event.end.toISOString()
       }));
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
-        events: storedEvents,
-        sharedAt: new Date().toISOString()
-      }));
+
+      // Only update events without sharedAt timestamp
+      const existingData = localStorage.getItem(`calendar-events-${scheduleId}`);
+      if (existingData) {
+        const parsedData = JSON.parse(existingData) as ScheduleHistory;
+        localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
+          events: storedEvents,
+          sharedAt: parsedData.sharedAt
+        }));
+      } else {
+        localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
+          events: storedEvents
+        }));
+      }
     }
   }, [events, scheduleId]);
 
@@ -216,12 +229,18 @@ function App() {
     }
   }, [scheduleTitle]);
 
+  useEffect(() => {
+    if (scheduleIds.length > 0) {
+      localStorage.setItem('calendar-schedule-ids', JSON.stringify(scheduleIds));
+    }
+  }, [scheduleIds]);
+
   const loadFromLocalStorage = (id: string) => {
-    const storedEvents = localStorage.getItem(`calendar-events-${id}`);
+    const storedData = localStorage.getItem(`calendar-events-${id}`);
     const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
     
-    if (storedEvents) {
-      const { events: parsedEvents } = JSON.parse(storedEvents) as ScheduleHistory;
+    if (storedData) {
+      const { events: parsedEvents }: ScheduleHistory = JSON.parse(storedData);
       setEvents(parsedEvents.map(event => ({
         ...event,
         start: new Date(event.start),
@@ -274,6 +293,18 @@ function App() {
       await navigator.clipboard.writeText(url.toString());
       setCopyButtonText('コピーしました！');
       setShowCopiedToast(true);
+
+      // Save events with sharedAt timestamp
+      const scheduleData: ScheduleHistory = {
+        events: storedEvents,
+        sharedAt: new Date().toISOString()
+      };
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(scheduleData));
+
+      // Add to schedule IDs if not already present
+      if (!scheduleIds.includes(scheduleId)) {
+        setScheduleIds(prev => [...prev, scheduleId]);
+      }
       
       if (copyTimeoutRef.current) {
         window.clearTimeout(copyTimeoutRef.current);
@@ -283,17 +314,6 @@ function App() {
         setCopyButtonText('共有リンクをコピー');
         setShowCopiedToast(false);
       }, 2000);
-
-      // Update schedule IDs
-      const updatedIds = Array.from(new Set([...scheduleIds, scheduleId]));
-      setScheduleIds(updatedIds);
-      localStorage.setItem('calendar-schedule-ids', JSON.stringify(updatedIds));
-
-      // Store events with timestamp
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
-        events: storedEvents,
-        sharedAt: new Date().toISOString()
-      }));
     } catch (error) {
       console.error('Failed to copy URL:', error);
       setCopyButtonText('コピーに失敗しました');
@@ -305,6 +325,48 @@ function App() {
       copyTimeoutRef.current = window.setTimeout(() => {
         setCopyButtonText('共有リンクをコピー');
       }, 2000);
+    }
+  };
+
+  const handleScheduleHistoryClick = () => {
+    setShowScheduleHistoryModal(true);
+  };
+
+  const handleAnsweredSchedulesClick = () => {
+    setShowAnsweredModal(true);
+  };
+
+  const handleCopyHistoryUrl = async (id: string) => {
+    const storedData = localStorage.getItem(`calendar-events-${id}`);
+    const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
+    
+    if (!storedData) return;
+    
+    const { events: storedEvents }: ScheduleHistory = JSON.parse(storedData);
+    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
+    
+    const url = new URL(window.location.href);
+    url.searchParams.set('events', encodedEvents);
+    url.searchParams.set('id', id);
+    if (storedTitle) {
+      url.searchParams.set('title', encodeURIComponent(storedTitle));
+    }
+    
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopyButtonText('コピーしました！');
+      setShowCopiedToast(true);
+      
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+      
+      copyTimeoutRef.current = window.setTimeout(() => {
+        setCopyButtonText('共有リンクをコピー');
+        setShowCopiedToast(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
     }
   };
 
@@ -321,6 +383,7 @@ function App() {
         return event;
       });
 
+      // Save user's approvals to localStorage
       if (scheduleId && userName) {
         const approvals: ApprovalResponse = {};
         updatedEvents.forEach(event => {
@@ -854,44 +917,6 @@ function App() {
     );
   };
 
-  const handleScheduleHistoryClick = () => {
-    setShowHistoryModal(true);
-  };
-
-  const handleCopyHistoryUrl = async (scheduleId: string) => {
-    const storedData = localStorage.getItem(`calendar-events-${scheduleId}`);
-    if (!storedData) return;
-
-    const { events: storedEvents } = JSON.parse(storedData) as ScheduleHistory;
-    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
-    
-    const url = new URL(window.location.href);
-    url.searchParams.set('events', encodedEvents);
-    url.searchParams.set('id', scheduleId);
-    
-    const storedTitle = localStorage.getItem(`calendar-schedule-title-${scheduleId}`);
-    if (storedTitle) {
-      url.searchParams.set('title', encodeURIComponent(storedTitle));
-    }
-
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      setCopyButtonText('コピーしました！');
-      setShowCopiedToast(true);
-      
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
-      }
-      
-      copyTimeoutRef.current = window.setTimeout(() => {
-        setCopyButtonText('共有リンクをコピー');
-        setShowCopiedToast(false);
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to copy URL:', error);
-    }
-  };
-
   return (
     <div className="h-screen flex bg-white">
       <div className="flex-1 flex flex-col">
@@ -937,11 +962,11 @@ function App() {
               </button>
               <div className="relative">
                 <button 
-                  className="p-3 hover:bg-gray-100 rounded-full relative"
+                  className="p-3 hover:bg-gray-100 rounded-full relative hidden sm:block"
                   onClick={handleShareEvents}
                   title={copyButtonText}
                 >
-                  <Copy className="w-6 h-6 text-gray-600" />
+                  <Share2 className="w-6 h-6 text-gray-600" />
                 </button>
                 {showCopiedToast && (
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap z-50">
@@ -981,8 +1006,6 @@ function App() {
                 </button>
               </div>
               <h2 className="text-base sm:text-xl">{formatDate(currentDate)}</h2>
-            </div>
-            <div className="flex items-center gap-2">
               {scheduleIds.length > 0 && (
                 <button
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
@@ -994,22 +1017,22 @@ function App() {
               {!scheduleIds.includes(scheduleId) && localStorage.getItem(`calendar-events-${scheduleId}`) && (
                 <button
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
-                  onClick={() => console.log('回答済みの候補日程')}
+                  onClick={handleAnsweredSchedulesClick}
                 >
                   回答済みの候補日程
                 </button>
               )}
-              {isCreator && (
-                <button 
-                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
-                  onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
-                >
-                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">予定を作成</span>
-                  <span className="sm:hidden">作成</span>
-                </button>
-              )}
             </div>
+            {isCreator && (
+              <button 
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
+                onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">予定を作成</span>
+                <span className="sm:hidden">作成</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -1126,6 +1149,13 @@ function App() {
           <h3 className="text-lg font-semibold">予定一覧</h3>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{events.length}件</span>
+            <button 
+              className="p-2 hover:bg-gray-100 rounded-full"
+              onClick={handleShareEvents}
+              title={copyButtonText}
+            >
+              <Copy className="w-5 h-5 text-gray-600" />
+            </button>
           </div>
         </div>
         <div className="overflow-y-auto h-[calc(100vh-64px)]">
@@ -1450,7 +1480,7 @@ function App() {
         </div>
       )}
 
-      {showHistoryModal && (
+      {showScheduleHistoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="p-6">
@@ -1458,7 +1488,7 @@ function App() {
                 <h3 className="text-xl font-semibold">作成済みの候補日程</h3>
                 <button 
                   className="p-2 hover:bg-gray-100 rounded-full"
-                  onClick={() => setShowHistoryModal(false)}
+                  onClick={() => setShowScheduleHistoryModal(false)}
                 >
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
@@ -1473,7 +1503,7 @@ function App() {
                   const shareDate = new Date(sharedAt);
 
                   return (
-                    <div key={id} className="flex items-center justify-between py-3 border-b last:border-b-0">
+                    <div key={id} className="flex items-center justify-between py-3">
                       <div>
                         <div className="font-medium">{title}</div>
                         <div className="text-sm text-gray-600">
@@ -1489,6 +1519,53 @@ function App() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAnsweredModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">回答済みの候補日程</h3>
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  onClick={() => setShowAnsweredModal(false)}
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto">
+                {(() => {
+                  const storedData = localStorage.getItem(`calendar-events-${scheduleId}`);
+                  if (!storedData) return null;
+
+                  const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
+                  if (!sharedAt) return null;
+
+                  const title = localStorage.getItem(`calendar-schedule-title-${scheduleId}`) || '無題の候補日程';
+                  const shareDate = new Date(sharedAt);
+
+                  return (
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <div className="font-medium">{title}</div>
+                        <div className="text-sm text-gray-600">
+                          {shareDate.toLocaleString('ja-JP')}
+                        </div>
+                      </div>
+                      <button
+                        className="p-2 hover:bg-gray-100 rounded-full"
+                        onClick={() => handleCopyHistoryUrl(scheduleId)}
+                      >
+                        <Copy className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
