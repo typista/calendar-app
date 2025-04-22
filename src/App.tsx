@@ -1053,7 +1053,7 @@ function App() {
 
       <div className="hidden md:block w-[300px] border-l">
         <div className="h-16 px-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-semibold">予定一覧</h3>
+          <h3 className="text-lg font-semibold">候補日程</h3>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{events.length}件</span>
             <button 
@@ -1087,7 +1087,7 @@ function App() {
         >
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-600" />
-            <span className="font-medium">予定一覧</span>
+            <span className="font-medium">候補日程</span>
           </div>
           <div className="text-sm text-gray-600">
             {events.length}件
@@ -1095,44 +1095,40 @@ function App() {
         </div>
       </div>
 
-      <div 
-        className={`
-          fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden
-          ${showBottomSheet ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-        `}
-        onClick={() => setShowBottomSheet(false)}
-      >
+      {showBottomSheet && (
         <div 
-          className={`
-            fixed inset-x-0 bottom-0 bg-white rounded-t-xl transition-transform duration-300 ease-out
-            ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}
-          `}
-          onClick={e => e.stopPropagation()}
+          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden z-40"
+          onClick={() => setShowBottomSheet(false)}
         >
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="text-lg font-semibold">予定一覧</h3>
-            <button 
-              className="p-2 hover:bg-gray-100 rounded-full"
-              onClick={() => setShowBottomSheet(false)}
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-          <div className="max-h-[70vh] overflow-y-auto p-4">
-            {events.length === 0 ? (
-              <div className="text-gray-500 text-center py-4">
-                予定はありません
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {[...events]
-                  .sort((a, b) => a.start.getTime() - b.start.getTime())
-                  .map(event => renderEventCard(event))}
-              </div>
-            )}
+          <div 
+            className="fixed inset-x-0 bottom-0 bg-white rounded-t-xl transition-transform duration-300 ease-out translate-y-0"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">候補日程</h3>
+              <button 
+                className="p-2 hover:bg-gray-100 rounded-full"
+                onClick={() => setShowBottomSheet(false)}
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-4">
+              {events.length === 0 ? (
+                <div className="text-gray-500 text-center py-4">
+                  予定はありません
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {[...events]
+                    .sort((a, b) => a.start.getTime() - b.start.getTime())
+                    .map(event => renderEventCard(event))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {eventModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 sm:pt-32 px-4 sm:px-0 z-50">
