@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Event {
@@ -40,6 +40,11 @@ interface ApprovalResponse {
   [eventId: string]: boolean;
 }
 
+interface ScheduleHistory {
+  events: StoredEvent[];
+  sharedAt: string;
+}
+
 function App() {
   const [scheduleId, setScheduleId] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -60,6 +65,7 @@ function App() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [displayTitle, setDisplayTitle] = useState('');
   const [timeRange, setTimeRange] = useState<TimeRange>(() => {
@@ -68,9 +74,7 @@ function App() {
   });
   const [isCreator, setIsCreator] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    const hasEvents = params.get('events');
-    const hasId = params.get('id');
-    return !hasEvents || !hasId;
+    return !params.get('events');
   });
   const [userName, setUserName] = useState(() => {
     const stored = localStorage.getItem('calendar-user-name');
@@ -79,6 +83,10 @@ function App() {
   const [approvers, setApprovers] = useState<string[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [copyButtonText, setCopyButtonText] = useState('共有リンクをコピー');
+  const [scheduleIds, setScheduleIds] = useState<string[]>(() => {
+    const stored = localStorage.getItem('calendar-schedule-ids');
+    return stored ? JSON.parse(stored) : [];
+  });
   const copyTimeoutRef = useRef<number>();
   const gridRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
@@ -100,13 +108,6 @@ function App() {
     const eventsParam = params.get('events');
     const titleParam = params.get('title');
     const idParam = params.get('id');
-    
-    if (titleParam && idParam) {
-      const decodedTitle = decodeURIComponent(titleParam);
-      setScheduleTitle(decodedTitle);
-      setDisplayTitle(decodedTitle);
-      localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
-    }
     
     if (eventsParam) {
       try {
@@ -138,7 +139,17 @@ function App() {
 
         if (idParam) {
           setScheduleId(idParam);
-          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(decodedEvents));
+          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify({
+            events: decodedEvents,
+            sharedAt: new Date().toISOString()
+          }));
+          
+          if (titleParam) {
+            const decodedTitle = decodeURIComponent(titleParam);
+            setScheduleTitle(decodedTitle);
+            setDisplayTitle(decodedTitle);
+            localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
+          }
         }
 
         const uniqueApprovers = new Set<string>();
@@ -164,11 +175,6 @@ function App() {
     } else if (isCreator && isInitialMount.current) {
       const newScheduleId = uuidv4();
       setScheduleId(newScheduleId);
-      
-      const storedScheduleIds = JSON.parse(localStorage.getItem('calendar-schedule-ids') || '[]');
-      storedScheduleIds.push(newScheduleId);
-      localStorage.setItem('calendar-schedule-ids', JSON.stringify(storedScheduleIds));
-      
       setShowTitleModal(true);
       isInitialMount.current = false;
     }
@@ -181,7 +187,10 @@ function App() {
         start: event.start.toISOString(),
         end: event.end.toISOString()
       }));
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(storedEvents));
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
+        events: storedEvents,
+        sharedAt: new Date().toISOString()
+      }));
     }
   }, [events, scheduleId]);
 
@@ -212,7 +221,7 @@ function App() {
     const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
     
     if (storedEvents) {
-      const parsedEvents: StoredEvent[] = JSON.parse(storedEvents);
+      const { events: parsedEvents } = JSON.parse(storedEvents) as ScheduleHistory;
       setEvents(parsedEvents.map(event => ({
         ...event,
         start: new Date(event.start),
@@ -232,72 +241,70 @@ function App() {
       return;
     }
 
-    shareEvents(true);
+    shareEvents();
   };
 
-  const shareEvents = async (shouldCopy: boolean = false) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('id', scheduleId);
-    
-    if (events.length > 0) {
-      const filteredEvents = events.filter(event => {
-        if (event.createdBy === userName) return true;
-        if (!event.approvals) return false;
-        
-        const approvalCount = Object.values(event.approvals).filter(v => v).length;
-        const position = approvers.length + (approvers.includes(userName) ? 0 : 1);
-        
-        return approvalCount >= position - 1;
-      });
-
-      const storedEvents: StoredEvent[] = filteredEvents.map(event => ({
-        ...event,
-        start: event.start.toISOString(),
-        end: event.end.toISOString(),
-        approvedBy: [...(event.approvedBy || []), userName]
-      }));
+  const shareEvents = async () => {
+    const filteredEvents = events.filter(event => {
+      if (event.createdBy === userName) return true;
+      if (!event.approvals) return false;
       
-      const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
-      url.searchParams.set('events', encodedEvents);
+      const approvalCount = Object.values(event.approvals).filter(v => v).length;
+      const position = approvers.length + (approvers.includes(userName) ? 0 : 1);
+      
+      return approvalCount >= position - 1;
+    });
 
-      // Store the share timestamp
-      const shareData = {
-        events: storedEvents,
-        sharedAt: new Date().toISOString()
-      };
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(shareData));
-    }
+    const storedEvents: StoredEvent[] = filteredEvents.map(event => ({
+      ...event,
+      start: event.start.toISOString(),
+      end: event.end.toISOString(),
+      approvedBy: [...(event.approvedBy || []), userName]
+    }));
     
+    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
+    const url = new URL(window.location.href);
+    url.searchParams.set('events', encodedEvents);
+    url.searchParams.set('id', scheduleId);
     if (scheduleTitle) {
       url.searchParams.set('title', encodeURIComponent(scheduleTitle));
     }
     
-    if (shouldCopy) {
-      try {
-        await navigator.clipboard.writeText(url.toString());
-        setCopyButtonText('コピーしました！');
-        setShowCopiedToast(true);
-        
-        if (copyTimeoutRef.current) {
-          window.clearTimeout(copyTimeoutRef.current);
-        }
-        
-        copyTimeoutRef.current = window.setTimeout(() => {
-          setCopyButtonText('共有リンクをコピー');
-          setShowCopiedToast(false);
-        }, 2000);
-      } catch (error) {
-        console.error('Failed to copy URL:', error);
-        setCopyButtonText('コピーに失敗しました');
-        
-        if (copyTimeoutRef.current) {
-          window.clearTimeout(copyTimeoutRef.current);
-        }
-        
-        copyTimeoutRef.current = window.setTimeout(() => {
-          setCopyButtonText('共有リンクをコピー');
-        }, 2000);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopyButtonText('コピーしました！');
+      setShowCopiedToast(true);
+      
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
       }
+      
+      copyTimeoutRef.current = window.setTimeout(() => {
+        setCopyButtonText('共有リンクをコピー');
+        setShowCopiedToast(false);
+      }, 2000);
+
+      // Update schedule IDs
+      const updatedIds = Array.from(new Set([...scheduleIds, scheduleId]));
+      setScheduleIds(updatedIds);
+      localStorage.setItem('calendar-schedule-ids', JSON.stringify(updatedIds));
+
+      // Store events with timestamp
+      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
+        events: storedEvents,
+        sharedAt: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+      setCopyButtonText('コピーに失敗しました');
+      
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+      
+      copyTimeoutRef.current = window.setTimeout(() => {
+        setCopyButtonText('共有リンクをコピー');
+      }, 2000);
     }
   };
 
@@ -331,7 +338,7 @@ function App() {
   const handleNameSubmit = () => {
     if (!userName.trim()) return;
     setShowNameModal(false);
-    shareEvents(true);
+    shareEvents();
   };
 
   const handleTitleSubmit = () => {
@@ -788,6 +795,7 @@ function App() {
   const renderEventCard = (event: Event) => {
     const isEventCreator = event.createdBy === userName;
     const approval = event.approvals?.[userName];
+    const showApprovalButtons = !isCreator && !isEventCreator;
 
     return (
       <div
@@ -810,7 +818,7 @@ function App() {
             {event.notes}
           </div>
         )}
-        {!isCreator && !isEventCreator && (
+        {showApprovalButtons && (
           <div className="flex items-center gap-2 mt-2">
             <button
               className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
@@ -818,7 +826,7 @@ function App() {
                   ? 'bg-green-100 text-green-700'
                   : 'hover:bg-green-50 text-gray-600'
               }`}
-              onClick={(e)=> {
+              onClick={(e) => {
                 e.stopPropagation();
                 handleApproval(event.id, true);
               }}
@@ -844,6 +852,44 @@ function App() {
         )}
       </div>
     );
+  };
+
+  const handleScheduleHistoryClick = () => {
+    setShowHistoryModal(true);
+  };
+
+  const handleCopyHistoryUrl = async (scheduleId: string) => {
+    const storedData = localStorage.getItem(`calendar-events-${scheduleId}`);
+    if (!storedData) return;
+
+    const { events: storedEvents } = JSON.parse(storedData) as ScheduleHistory;
+    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
+    
+    const url = new URL(window.location.href);
+    url.searchParams.set('events', encodedEvents);
+    url.searchParams.set('id', scheduleId);
+    
+    const storedTitle = localStorage.getItem(`calendar-schedule-title-${scheduleId}`);
+    if (storedTitle) {
+      url.searchParams.set('title', encodeURIComponent(storedTitle));
+    }
+
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopyButtonText('コピーしました！');
+      setShowCopiedToast(true);
+      
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+      
+      copyTimeoutRef.current = window.setTimeout(() => {
+        setCopyButtonText('共有リンクをコピー');
+        setShowCopiedToast(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+    }
   };
 
   return (
@@ -891,7 +937,7 @@ function App() {
               </button>
               <div className="relative">
                 <button 
-                  className="p-3 hover:bg-gray-100 rounded-full relative hidden sm:block"
+                  className="p-3 hover:bg-gray-100 rounded-full relative"
                   onClick={handleShareEvents}
                   title={copyButtonText}
                 >
@@ -937,32 +983,22 @@ function App() {
               <h2 className="text-base sm:text-xl">{formatDate(currentDate)}</h2>
             </div>
             <div className="flex items-center gap-2">
-              {(() => {
-                const storedScheduleIds = JSON.parse(localStorage.getItem('calendar-schedule-ids') || '[]');
-                const hasScheduleIds = storedScheduleIds.length > 0;
-                const hasCurrentSchedule = localStorage.getItem(`calendar-events-${scheduleId}`);
-                
-                if (hasScheduleIds) {
-                  return (
-                    <button 
-                      className="hidden sm:flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
-                      onClick={() => console.log('作成済みの候補日程')}
-                    >
-                      作成済みの候補日程
-                    </button>
-                  );
-                } else if (hasCurrentSchedule && !hasScheduleIds) {
-                  return (
-                    <button 
-                      className="hidden sm:flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
-                      onClick={() => console.log('回答済みの候補日程')}
-                    >
-                      回答済みの候補日程
-                    </button>
-                  );
-                }
-                return null;
-              })()}
+              {scheduleIds.length > 0 && (
+                <button
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
+                  onClick={handleScheduleHistoryClick}
+                >
+                  作成済みの候補日程
+                </button>
+              )}
+              {!scheduleIds.includes(scheduleId) && localStorage.getItem(`calendar-events-${scheduleId}`) && (
+                <button
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
+                  onClick={() => console.log('回答済みの候補日程')}
+                >
+                  回答済みの候補日程
+                </button>
+              )}
               {isCreator && (
                 <button 
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
@@ -1087,8 +1123,8 @@ function App() {
 
       <div className="hidden md:block w-[300px] border-l">
         <div className="h-16 px-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-semibold">候補日程</h3>
-          <div className="flex items-center">
+          <h3 className="text-lg font-semibold">予定一覧</h3>
+          <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{events.length}件</span>
           </div>
         </div>
@@ -1114,7 +1150,7 @@ function App() {
         >
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-600" />
-            <span className="font-medium">候補日程</span>
+            <span className="font-medium">予定一覧</span>
           </div>
           <div className="text-sm text-gray-600">
             {events.length}件
@@ -1122,40 +1158,44 @@ function App() {
         </div>
       </div>
 
-      {showBottomSheet && (
+      <div 
+        className={`
+          fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden
+          ${showBottomSheet ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+        `}
+        onClick={() => setShowBottomSheet(false)}
+      >
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 md:hidden z-40"
-          onClick={() => setShowBottomSheet(false)}
+          className={`
+            fixed inset-x-0 bottom-0 bg-white rounded-t-xl transition-transform duration-300 ease-out
+            ${showBottomSheet ? 'translate-y-0' : 'translate-y-full'}
+          `}
+          onClick={e => e.stopPropagation()}
         >
-          <div 
-            className="fixed inset-x-0 bottom-0 bg-white rounded-t-xl transition-transform duration-300 ease-out translate-y-0"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">候補日程</h3>
-              <button 
-                className="p-2 hover:bg-gray-100 rounded-full"
-                onClick={() => setShowBottomSheet(false)}
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto p-4">
-              {events.length === 0 ? (
-                <div className="text-gray-500 text-center py-4">
-                  予定はありません
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {[...events]
-                    .sort((a, b) => a.start.getTime() - b.start.getTime())
-                    .map(event => renderEventCard(event))}
-                </div>
-              )}
-            </div>
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="text-lg font-semibold">予定一覧</h3>
+            <button 
+              className="p-2 hover:bg-gray-100 rounded-full"
+              onClick={() => setShowBottomSheet(false)}
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          <div className="max-h-[70vh] overflow-y-auto p-4">
+            {events.length === 0 ? (
+              <div className="text-gray-500 text-center py-4">
+                予定はありません
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {[...events]
+                  .sort((a, b) => a.start.getTime() - b.start.getTime())
+                  .map(event => renderEventCard(event))}
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {eventModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 sm:pt-32 px-4 sm:px-0 z-50">
@@ -1406,6 +1446,51 @@ function App() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold">作成済みの候補日程</h3>
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  onClick={() => setShowHistoryModal(false)}
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto">
+                {scheduleIds.map(id => {
+                  const storedData = localStorage.getItem(`calendar-events-${id}`);
+                  if (!storedData) return null;
+
+                  const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
+                  const title = localStorage.getItem(`calendar-schedule-title-${id}`) || '無題の候補日程';
+                  const shareDate = new Date(sharedAt);
+
+                  return (
+                    <div key={id} className="flex items-center justify-between py-3 border-b last:border-b-0">
+                      <div>
+                        <div className="font-medium">{title}</div>
+                        <div className="text-sm text-gray-600">
+                          {shareDate.toLocaleString('ja-JP')}
+                        </div>
+                      </div>
+                      <button
+                        className="p-2 hover:bg-gray-100 rounded-full"
+                        onClick={() => handleCopyHistoryUrl(id)}
+                      >
+                        <Copy className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
