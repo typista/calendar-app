@@ -54,6 +54,7 @@ function App() {
     const stored = localStorage.getItem('calendar-schedule-ids');
     return stored ? JSON.parse(stored) : [];
   });
+  const [hasValidSchedules, setHasValidSchedules] = useState(false);
   const [showScheduleHistoryModal, setShowScheduleHistoryModal] = useState(false);
   const [showAnsweredModal, setShowAnsweredModal] = useState(false);
   const [hasAnsweredSchedules, setHasAnsweredSchedules] = useState(false);
@@ -241,6 +242,25 @@ function App() {
       setHasAnsweredSchedules(false);
     }
   }, [scheduleId]);
+
+  useEffect(() => {
+    let hasValid = false;
+    for (const id of scheduleIds) {
+      const storedData = localStorage.getItem(`calendar-events-${id}`);
+      if (storedData) {
+        try {
+          const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
+          if (sharedAt && !isNaN(new Date(sharedAt).getTime())) {
+            hasValid = true;
+            break;
+          }
+        } catch (error) {
+          console.error('Failed to parse stored data:', error);
+        }
+      }
+    }
+    setHasValidSchedules(hasValid);
+  }, [scheduleIds]);
 
   const loadFromLocalStorage = (id: string) => {
     const storedData = localStorage.getItem(`calendar-events-${id}`);
@@ -1012,7 +1032,7 @@ function App() {
               <h2 className="text-base sm:text-xl">{formatDate(currentDate)}</h2>
             </div>
             <div className="flex items-center gap-2">
-              {scheduleIds.length > 0 && (
+              {hasValidSchedules && (
                 <button
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
                   onClick={handleScheduleHistoryClick}
