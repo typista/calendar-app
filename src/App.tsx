@@ -234,14 +234,13 @@ function App() {
   }, [scheduleIds]);
 
   useEffect(() => {
-    const storedData = localStorage.getItem(`calendar-events-${scheduleId}`);
-    if (storedData) {
-      const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
-      setHasAnsweredSchedules(!!sharedAt);
+    if (scheduleId && userName) {
+      const hasAnswers = localStorage.getItem(`calendar-approvals-${scheduleId}-${userName}`) !== null;
+      setHasAnsweredSchedules(hasAnswers);
     } else {
       setHasAnsweredSchedules(false);
     }
-  }, [scheduleId]);
+  }, [scheduleId, userName]);
 
   useEffect(() => {
     let hasValid = false;
@@ -819,6 +818,7 @@ function App() {
             backgroundColor: event.color,
           }}
           onMouseDown={(e) => handleEventMouseDown(e, event)}
+          onT
           onTouchStart={(e) => handleEventTouchStart(e, event)}
           onDoubleClick={(e) => handleEventDoubleClick(e, event)}
         >
