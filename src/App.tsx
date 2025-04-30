@@ -140,6 +140,7 @@ function App() {
     scheduleTitle,
     displayTitle,
     showAnsweredButton,
+    effectiveCreator,
     setScheduleTitle,
     setDisplayTitle
   } = useCalendarData(scheduleId, userName, isCreator);
@@ -559,9 +560,11 @@ function App() {
   };
 
   const handleMouseDown = (e: MouseEvent) => {
-    if (draggingEvent || !isCreator) return;
+    console.log(effectiveCreator);
+    if (draggingEvent || !effectiveCreator) return;
     
     const position = getEventPosition(e);
+    console.log(position);
     if (!position) return;
 
     const weekStart = new Date(currentDate);
@@ -582,7 +585,7 @@ function App() {
   };
 
   const handleTouchStart = (e: TouchEvent) => {
-    if (!isCreator) return;
+    if (!effectiveCreator) return;
     
     if (e.touches.length === 1) {
       const touch = e.touches[0];
@@ -642,7 +645,7 @@ function App() {
   };
 
   const handleEventMouseDown = (e: MouseEvent, event: Event) => {
-    if (!isCreator) return;
+    if (!effectiveCreator) return;
     
     e.stopPropagation();
     const targetElement = e.currentTarget as HTMLElement;
@@ -653,7 +656,7 @@ function App() {
   };
 
   const handleEventTouchStart = (e: TouchEvent, event: Event) => {
-    if (!isCreator) return;
+    if (!effectiveCreator) return;
     
     e.stopPropagation();
     const touch = e.touches[0];
@@ -665,7 +668,7 @@ function App() {
   };
 
   const handleEventDoubleClick = (e: MouseEvent, event: Event) => {
-    if (!isCreator) return;
+    if (!effectiveCreator) return;
     
     e.stopPropagation();
     setEventModal({ show: true, start: event.start, end: event.end, event });
@@ -749,7 +752,7 @@ function App() {
   };
 
   const handleCreateEvent = () => {
-    if (!isCreator) return;
+    if (!effectiveCreator) return;
 
     const now = new Date();
     if (eventModal.start < now) {
@@ -870,7 +873,7 @@ function App() {
       return (
         <div
           key={event.id}
-          className={`absolute rounded-lg px-2 py-1 text-white text-sm ${isCreator ? 'cursor-move' : ''} flex flex-col`}
+          className={`absolute rounded-lg px-2 py-1 text-white text-sm ${effectiveCreator ? 'cursor-move' : ''} flex flex-col`}
           style={{
             left,
             top: `${startHour * 48 + (startMinutes / 60) * 48}px`,
@@ -942,7 +945,7 @@ function App() {
   const renderEventCard = (event: Event) => {
     const isEventCreator = event.createdBy === userName;
     const approval = event.approvals?.[userName];
-    const showApprovalButtons = !isCreator && !isEventCreator;
+    const showApprovalButtons = !effectiveCreator && !isEventCreator;
 
     return (
       <div
@@ -1108,7 +1111,7 @@ function App() {
                   回答済みの候補日程
                 </button>
               )}
-              {isCreator && (
+              {effectiveCreator && (
                 <button 
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
                   onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}

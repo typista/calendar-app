@@ -1,5 +1,5 @@
 // hooks/useCalendarData.ts
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface StoredEvent {
@@ -24,15 +24,19 @@ export interface ApprovalResponse {
 
 export interface UseCalendarDataResult {
   events: Event[];
+  setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
   scheduleTitle: string;
+  setScheduleTitle: React.Dispatch<React.SetStateAction<string>>;
   displayTitle: string;
+  setDisplayTitle: React.Dispatch<React.SetStateAction<string>>;
   showAnsweredButton: boolean;
-  loadCalendarData: (id: string, userName: string) => void;
+  effectiveCreator: boolean;
 }
 
 /**
  * カレンダーデータ読み込み & 回復用フック
  * URL パラメータ or localStorage から候補スロットと回答スロットを復元
+ * effectiveCreator: isCreator or no events yet
  */
 export function useCalendarData(
   scheduleId: string,
@@ -43,11 +47,17 @@ export function useCalendarData(
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [displayTitle, setDisplayTitle] = useState('');
   const [showAnsweredButton, setShowAnsweredButton] = useState(false);
+  const originalCount = useRef<number>(0);
 
+  // 回答者でも、まだイベントがなければ作成者モード
+  const effectiveCreator = isCreator || originalCount.current === 0;
+
+  // localStorage から候補スロットとタイトルを読み込む
   const loadLocal = (id: string) => {
     const data = localStorage.getItem(`calendar-events-${id}`);
     if (data) {
       const { events: storedEvents } = JSON.parse(data) as { events: StoredEvent[] };
+      originalCount.current = storedEvents.length;
       setEvents(
         storedEvents.map(ev => ({
           ...ev,
@@ -63,6 +73,7 @@ export function useCalendarData(
     }
   };
 
+  // URL or localStorage からデータを読み込み、回答状態をマージ
   const loadCalendarData = (id: string, user: string) => {
     const params = new URLSearchParams(window.location.search);
     const eventsParam = params.get('events');
@@ -73,6 +84,7 @@ export function useCalendarData(
     if (eventsParam) {
       try {
         const decoded = JSON.parse(decodeURIComponent(atob(eventsParam))) as StoredEvent[];
+        originalCount.current = decoded.length;
         const parsed = decoded.map(ev => ({
           ...ev,
           start: new Date(ev.start),
@@ -113,12 +125,13 @@ export function useCalendarData(
         setEvents(prev =>
           prev.map(ev => {
             const info = approvals[ev.id];
-            if (!info) return ev; // 未回答
-            const slot = info.slot;
+            if (!info) return ev;
+            // slot がある場合のみ上書き
+            const slot = info.slot || {};
             return {
               ...ev,
-              start: slot && slot.start ? new Date(slot.start) : ev.start,
-              end: slot && slot.end ? new Date(slot.end) : ev.end,
+              start: slot.start ? new Date(slot.start) : ev.start,
+              end: slot.end ? new Date(slot.end) : ev.end,
               color: info.color || ev.color,
               title: info.title || ev.title,
               notes: info.notes || ev.notes,
@@ -132,9 +145,19 @@ export function useCalendarData(
     }
   };
 
+  // 初回マウント or 引数変更時の読み込み
   useEffect(() => {
     if (scheduleId) loadCalendarData(scheduleId, userName);
   }, [scheduleId, userName, isCreator]);
 
-  return { events, scheduleTitle, displayTitle, showAnsweredButton, setScheduleTitle, setDisplayTitle, setEvents };
+  return {
+    events,
+    setEvents,
+    scheduleTitle,
+    setScheduleTitle,
+    displayTitle,
+    setDisplayTitle,
+    showAnsweredButton,
+    effectiveCreator,
+  };
 }
