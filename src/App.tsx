@@ -1,6 +1,6 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
 import { useCalendarData } from './hooks/useCalendarData';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Share2, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 // イベントの型定義
@@ -1050,7 +1050,7 @@ function App() {
                   onClick={handleShareEvents}
                   title={copyButtonText}
                 >
-                  <Share2 className="w-6 h-6 text-gray-600" />
+                  <Copy className="w-6 h-6 text-gray-600" />
                 </button>
                 {showCopiedToast && (
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-4 py-2 bg-gray-800 text-white text-sm rounded shadow-lg whitespace-nowrap">
@@ -1231,7 +1231,7 @@ function App() {
               onClick={handleShareEvents}
               title={copyButtonText}
             >
-              <Share2 className="w-5 h-5 text-gray-600" />
+              <Copy className="w-5 h-5 text-gray-600" />
             </button>
           </div>
         </div>
