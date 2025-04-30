@@ -1142,7 +1142,7 @@ function App() {
 
           <div 
             ref={gridRef}
-            className="relative flex-1 grid grid-cols-8"
+            className="relative flex-1 grid grid-cols-8 overflow-y-scroll overflow-x-hidden"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
