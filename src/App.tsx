@@ -8,6 +8,7 @@ import { TitleModal } from './components/Modal/TitleModal';
 import { ScheduleHistoryModal } from './components/Modal/ScheduleHistoryModal';
 import { AnsweredHistoryModal } from './components/Modal/AnsweredHistoryModal';
 import { SettingsModal } from './components/Modal/SettingsModal';
+import { EventModal } from './components/Modal/EventModal';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,7 +32,7 @@ interface EventPosition {
 }
 
 // モーダル表示用の型定義
-interface EventModal {
+interface EventData {
   show: boolean;          // モーダル表示フラグ
   start: Date;            // 編集対象開始日時
   end: Date;              // 編集対象終了日時
@@ -108,7 +109,7 @@ function App() {
   const [draggingEvent, setDraggingEvent] = useState<{ event: Event, offsetY: number } | null>(null);
 
   // 予定追加・編集モーダル用状態
-  const [eventModal, setEventModal] = useState<EventModal>({ show: false, start: new Date(), end: new Date() });
+  const [eventData, setEventData] = useState<EventData>({ show: false, start: new Date(), end: new Date() });
   const [newEventTitle, setNewEventTitle] = useState('');
   const [newEventColor, setNewEventColor] = useState('#4285f4');
   const [newEventNotes, setNewEventNotes] = useState('');
@@ -704,7 +705,7 @@ function App() {
     const end = new Date(Math.max(startDate.getTime(), endDate.getTime()));
 
     if (start.getTime() !== end.getTime()) {
-      setEventModal({ show: true, start, end });
+      setEventData({ show: true, start, end });
       setNewEventTitle('');
       setNewEventColor('#4285f4');
       setNewEventNotes('');
@@ -742,7 +743,7 @@ function App() {
     if (!effectiveCreator) return;
     
     e.stopPropagation();
-    setEventModal({ show: true, start: event.start, end: event.end, event });
+    setEventData({ show: true, start: event.start, end: event.end, event });
     setNewEventTitle(event.title);
     setNewEventColor(event.color);
     setNewEventNotes(event.notes || '');
@@ -811,7 +812,7 @@ function App() {
     const end = new Date(Math.max(startDate.getTime(), endDate.getTime()));
 
     if (start.getTime() !== end.getTime()) {
-      setEventModal({ show: true, start, end });
+      setEventData({ show: true, start, end });
       setNewEventTitle('');
       setNewEventColor('#4285f4');
       setNewEventNotes('');
@@ -822,31 +823,35 @@ function App() {
     setDragEnd(null);
   };
 
+  const handleEventModalClose = () =>{
+    setEventData({show: false})
+  }
+
   const handleCreateEvent = () => {
     if (!effectiveCreator) return;
 
     const now = new Date();
-    if (eventModal.start < now) {
+    if (eventData.start < now) {
       alert('過去の日時には予定を作成できません');
       return;
     }
     
     const newEvent: Event = {
-      id: eventModal.event?.id || uuidv4(),
+      id: eventData.event?.id || uuidv4(),
       title: newEventTitle,
-      start: eventModal.start,
-      end: eventModal.end,
+      start: eventData.start,
+      end: eventData.end,
       color: newEventColor,
       notes: newEventNotes,
       createdBy: userName,
-      approvals: eventModal.event?.approvals || {}
+      approvals: eventData.event?.approvals || {}
     };
 
     setEvents(events.map(e => e.id === newEvent.id ? newEvent : e));
-    if (!eventModal.event) {
+    if (!eventData.event) {
       setEvents(prev => [...prev, newEvent]);
     }
-    setEventModal({ ...eventModal, show: false });
+    setEventData({ ...eventData, show: false });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -1175,7 +1180,7 @@ function App() {
               {effectiveCreator && (
                 <button 
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-full border shadow-sm text-sm sm:text-base"
-                  onClick={() => setEventModal({ show: true, start: new Date(), end: new Date() })}
+                  onClick={() => setEventData({ show: true, start: new Date(), end: new Date() })}
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden sm:inline">予定を作成</span>
@@ -1323,91 +1328,19 @@ function App() {
         onClick={setShowAnsweredModal}
         onClose={handleAnsweredSchedulesClose}
       />
-
-      {eventModal.show && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50"
-          onClick={() => setEventModal({ ...eventModal, show: false })}
-        >
-          <div 
-            className="bg-white rounded-lg w-full max-w-md mx-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-medium">
-                  {eventModal.event ? '予定を編集' : '予定を追加'}
-                </h3>
-                <button 
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                  onClick={() => setEventModal({ ...eventModal, show: false })}
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-              <input
-                type="text"
-                placeholder="タイトルを入力"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
-                value={newEventTitle}
-                onChange={(e) => setNewEventTitle(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-              />
-              <div className="text-sm text-gray-600 mb-4">
-                {formatEventDate(eventModal.start)}
-                <br />
-                {formatEventTime(eventModal.start)} 〜 {formatEventTime(eventModal.end)}
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  色を選択
-                </label>
-                
-                <div className="flex gap-2">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color}
-                      className={`w-6 h-6 rounded-full border-2 ${
-                        color === newEventColor ? 'border-gray-400' : 'border-transparent'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setNewEventColor(color)}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  メモ
-                </label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  rows={3}
-                  value={newEventNotes}
-                  onChange={(e) => setNewEventNotes(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                  onClick={() => setEventModal({ ...eventModal, show: false })}
-                >
-                  キャンセル
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                  onClick={handleCreateEvent}
-                  disabled={!newEventTitle.trim()}
-                >
-                  保存
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <EventModal
+        show={eventData.show}
+        newEventTitle={newEventTitle}
+        newEventColor={newEventColor}
+        newEventNotes={newEventNotes}
+        eventData={eventData}
+        setEventData={setEventData}
+        setNewEventTitle={setNewEventTitle}
+        setNewEventColor={setNewEventColor}
+        onClick={handleCreateEvent}
+        onClose={handleEventModalClose}
+        onKeyDown={handleKeyDown}
+      />
     </div>
   );
 }
