@@ -6,6 +6,7 @@ import { CalendarList } from './components/CalendarList/CalendarList';
 import { NameModal } from './components/Modal/NameModal';
 import { TitleModal } from './components/Modal/TitleModal';
 import { ScheduleHistoryModal } from './components/Modal/ScheduleHistoryModal';
+import { AnsweredHistoryModal } from './components/Modal/AnsweredHistoryModal';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -547,6 +548,10 @@ function App() {
 
   const handleAnsweredSchedulesClick = () => {
     setShowAnsweredModal(true);
+  };
+
+  const handleAnsweredSchedulesClose = () => {
+    setShowAnsweredModal(false);
   };
 
   const handleCopyHistoryUrl = async (id: string) => {
@@ -1373,57 +1378,13 @@ function App() {
         onClick={setShowScheduleHistoryModal}
         onClose={handleScheduleHistoryClose}
       />
-
-      {showAnsweredModal && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50"
-          onClick={() => setShowAnsweredModal(false)}
-        >
-          <div 
-            className="bg-white rounded-lg w-full max-w-md mx-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-medium">回答済みの候補日程</h3>
-                <button 
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                  onClick={() => setShowAnsweredModal(false)}
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-              <div className="max-h-[60vh] overflow-y-auto">
-                {(() => {
-                  const storedData = localStorage.getItem(`calendar-events-${scheduleId}`);
-                  if (!storedData) return null;
-
-                  const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
-                  const title = localStorage.getItem(`calendar-schedule-title-${scheduleId}`) || '無題の候補日程';
-                  const date = new Date(sharedAt);
-
-                  return (
-                    <div className="py-4 flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{title}</div>
-                        <div className="text-sm text-gray-600">
-                          {date.toLocaleString('ja-JP')}
-                        </div>
-                      </div>
-                      <button
-                        className="p-2 hover:bg-gray-100 rounded-full"
-                        onClick={() => handleCopyHistoryUrl(scheduleId)}
-                      >
-                        <Copy className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnsweredHistoryModal
+        show={showAnsweredModal}
+        scheduleId={scheduleId}
+        handleCopyHistoryUrl={handleCopyHistoryUrl}
+        onClick={setShowAnsweredModal}
+        onClose={handleAnsweredSchedulesClose}
+      />
 
       {eventModal.show && (
         <div 
