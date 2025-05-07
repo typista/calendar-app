@@ -60,6 +60,18 @@ function App() {
     return params.get('id') || uuidv4();
   });
 
+  // ユーザー名
+  const [userName, setUserName] = useState(() => {
+    const stored = localStorage.getItem('calendar-user-name');
+    return stored || '';
+  });
+
+  // 作成者判定（URLに events パラメータが無い場合は作成者）
+  const [isCreator, setIsCreator] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return !params.get('events');
+  });
+
   // これまで参照した scheduleIds を localStorage から初期化
   const [scheduleIds, setScheduleIds] = useState<string[]>(() => {
     const stored = localStorage.getItem('calendar-schedule-ids');
@@ -113,18 +125,6 @@ function App() {
     return stored ? JSON.parse(stored) : { start: 8, end: 21 };
   });
 
-  // 作成者判定（URLに events パラメータが無い場合は作成者）
-  const [isCreator, setIsCreator] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return !params.get('events');
-  });
-
-  // ユーザー名
-  const [userName, setUserName] = useState(() => {
-    const stored = localStorage.getItem('calendar-user-name');
-    return stored || '';
-  });
-
   // 承認者リスト
   const [approvers, setApprovers] = useState<string[]>([]);
 
@@ -138,11 +138,11 @@ function App() {
     events,
     setEvents,
     scheduleTitle,
+    setScheduleTitle,
     displayTitle,
+    setDisplayTitle,
     showAnsweredButton,
     effectiveCreator,
-    setScheduleTitle,
-    setDisplayTitle
   } = useCalendarData(scheduleId, userName, isCreator);
 
   const copyTimeoutRef = useRef<number>();
@@ -341,6 +341,80 @@ function App() {
     }
   };
 
+  /**
+   * 回答者用：OK/NG/未回答 を localStorage に保存し、
+   * OK のみを eventsParam として URL コピー
+   */
+  /**
+   * 回答者用：OK/NG/未回答を localStorage に保存しつつ、
+   * URLコピー用にはOKのみを eventsParam にする
+   */
+  const handleCopyUrl = async (): Promise<void> => {
+    // --- 1) 候補スロット本体を保存 ---
+    const storedEvents: StoredEvent[] = events.map(ev => ({
+      ...ev,
+      // ISO文字列化
+      start: ev.start.toISOString(),
+      end:   ev.end.toISOString(),
+      createdBy: ev.createdBy,
+      approvals: ev.approvals,
+      approvedBy: ev.approvedBy
+    }));
+    localStorage.setItem(
+      `calendar-events-${scheduleId}`,
+      JSON.stringify({ events: storedEvents, sharedAt: new Date().toISOString() })
+    );
+
+    // --- 2) 全回答を保存 (未回答はOK扱い) ---
+    const approvalMap: ApprovalResponse = {};
+    events.forEach(ev => {
+      const approved = ev.approvals?.[userName] ?? true;
+      approvalMap[ev.id] = approved;
+    });
+    localStorage.setItem(
+      `calendar-approvals-${scheduleId}-${userName}`,
+      JSON.stringify(approvalMap)
+    );
+
+    // --- 3) ブラウザURLを id+title のみで更新 ---
+    const browserUrl = new URL(window.location.href);
+    browserUrl.searchParams.set('id', scheduleId);
+    browserUrl.searchParams.delete('events');
+    browserUrl.searchParams.delete('responseId');
+    if (displayTitle) {
+      browserUrl.searchParams.set('title', encodeURIComponent(displayTitle));
+    }
+    window.history.replaceState(null, '', browserUrl.toString());
+
+    // --- 4) OK=true のものだけを eventsParam にしてクリップボードへコピー ---
+    const okPayload = events
+      .filter(ev => approvalMap[ev.id])
+      .map(ev => ({
+        id:    ev.id,
+        start: ev.start.toISOString(),
+        end:   ev.end.toISOString(),
+        color: ev.color,
+        title: ev.title,
+        notes: ev.notes || ''
+      }));
+    const encoded = btoa(encodeURIComponent(JSON.stringify(okPayload)));
+    const clipUrl = new URL(window.location.href);
+    clipUrl.searchParams.set('events', encoded);
+    clipUrl.searchParams.set('id', scheduleId);
+    if (displayTitle) {
+      clipUrl.searchParams.set('title', encodeURIComponent(displayTitle));
+    }
+
+    try {
+      await navigator.clipboard.writeText(clipUrl.toString());
+      setShowCopiedToast(true);
+      clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = window.setTimeout(() => setShowCopiedToast(false), 2000);
+    } catch {
+      console.error('URLコピーに失敗しました');
+    }
+  };
+  
   const handleShareEvents = () => {
     if (!userName) {
       setShowNameModal(true);
@@ -560,7 +634,6 @@ function App() {
   };
 
   const handleMouseDown = (e: MouseEvent) => {
-    console.log(effectiveCreator);
     if (draggingEvent || !effectiveCreator) return;
     
     const position = getEventPosition(e);
@@ -943,16 +1016,20 @@ function App() {
   };
 
   const renderEventCard = (event: Event) => {
+    // 当該ユーザーがこのイベントを作成した or マスター権限がある場合のみ編集モーダルを開ける
+    const allowEdit = isCreator || event.createdBy === userName;
     const isEventCreator = event.createdBy === userName;
     const approval = event.approvals?.[userName];
-    const showApprovalButtons = !effectiveCreator && !isEventCreator;
+    // 回答ボタンは回答者モード(= !effectiveCreator)かつ自分作成でないときだけ
+    const showApprovalButtons = !effectiveCreator && event.createdBy !== userName;
+
 
     return (
       <div
         key={event.id}
         className="p-3 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
         style={{ borderLeftColor: event.color, borderLeftWidth: '4px' }}
-        onClick={(e) => handleEventDoubleClick(e as any, event)}
+        onClick={allowEdit ? (e) => handleEventDoubleClick(e as any, event) : undefined}
       >
         <div className="text-sm text-gray-600">
           {formatEventDate(event.start)}

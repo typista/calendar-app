@@ -80,7 +80,9 @@ export function useCalendarData(
     const titleParam = params.get('title');
     const respParam = params.get('responseId');
 
-    // 候補スロットの読み込み
+    // 候補スロットは
+    // - 作成者なら URL パラメータを優先
+    // - 回答者（effectiveCreator含む）なら常に localStorage から
     if (eventsParam) {
       try {
         const decoded = JSON.parse(decodeURIComponent(atob(eventsParam))) as StoredEvent[];
@@ -91,22 +93,18 @@ export function useCalendarData(
           end: new Date(ev.end),
         }));
         setEvents(parsed);
+        // 作成者のみ localStorage に保存
         if (isCreator) {
           localStorage.setItem(
             `calendar-events-${id}`,
             JSON.stringify({ events: decoded, sharedAt: new Date().toISOString() })
           );
-          if (titleParam) {
-            localStorage.setItem(
-              `calendar-schedule-title-${id}`,
-              decodeURIComponent(titleParam)
-            );
-          }
         }
         if (titleParam) {
           const t = decodeURIComponent(titleParam);
           setScheduleTitle(t);
           setDisplayTitle(t);
+          if (isCreator) localStorage.setItem(`calendar-schedule-title-${id}`, t);
         }
       } catch {
         loadLocal(id);
