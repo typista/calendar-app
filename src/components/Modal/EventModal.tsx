@@ -1,17 +1,9 @@
 import React, { FormEvent } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { WEEK_DAYS, HOURS, COLORS } from './../../constants/calendar';
-import { Event } from './../../types/Event';
+import { EventData } from './../../types/Calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './../../utils/dateUtils';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
-
-// モーダル表示用の型定義
-interface EventData {
-  show: boolean;          // モーダル表示フラグ
-  start: Date;            // 編集対象開始日時
-  end: Date;              // 編集対象終了日時
-  event?: Event;          // 編集対象イベント（新規なら undefined）
-}
 
 type EventModalProps = {
     show: boolean

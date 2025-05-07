@@ -1,12 +1,4 @@
-import { Event } from './../../types/Event';
-
-// モーダル表示用の型定義
-interface EventData {
-  show: boolean;          // モーダル表示フラグ
-  start: Date;            // 編集対象開始日時
-  end: Date;              // 編集対象終了日時
-  event?: Event;          // 編集対象イベント（新規なら undefined）
-}
+import { EventData } from './../../types/Calendar';
 
 export interface HeaderProps {
   displayTitle: string;

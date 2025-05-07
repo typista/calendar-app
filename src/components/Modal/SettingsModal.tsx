@@ -1,13 +1,7 @@
 import React, { FormEvent } from 'react'
 import { ModalWrapper } from './ModalWrapper'
-import { Event } from '../../types/Event';
+import { TimeRange } from '../../types/Calendar';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
-
-// 表示時間帯の型
-interface TimeRange {
-    start: number;          // 開始時刻 (hour)
-    end: number;            // 終了時刻 (hour)
-}
 
 type SettingsModalProps = {
     show: boolean

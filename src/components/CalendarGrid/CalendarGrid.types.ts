@@ -1,16 +1,10 @@
-import { Event } from '../../types/Event';
-
-// 表示時間帯の型
-interface TimeRange {
-  start: number;          // 開始時刻 (hour)
-  end: number;            // 終了時刻 (hour)
-}
+import { CalendarEvent, TimeRange } from '../../types/Calendar';
 
 export interface CalendarGridProps {
   gridRef: () => HTMLDivElement;
   timeRange: TimeRange;
   currentTime: Date;
-  events: Event[];
+  events: CalendarEvent[];
   draggingEvent: () => { Event, number };
   effectiveCreator: boolean;
   currentDate: Date;

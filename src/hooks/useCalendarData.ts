@@ -1,37 +1,7 @@
 // hooks/useCalendarData.ts
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react'
+import { StoredEvent, ApprovalInfo, ApprovalResponse, UseCalendarDataResult } from '../types/Calendar';
 import { v4 as uuidv4 } from 'uuid';
-
-export interface StoredEvent {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  color: string;
-  notes?: string;
-}
-
-export interface ApprovalInfo {
-  approved: boolean;
-  slot: { start: string; end: string };
-  color: string;
-  title: string;
-  notes: string;
-}
-export interface ApprovalResponse {
-  [eventId: string]: ApprovalInfo;
-}
-
-export interface UseCalendarDataResult {
-  events: Event[];
-  setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
-  scheduleTitle: string;
-  setScheduleTitle: React.Dispatch<React.SetStateAction<string>>;
-  displayTitle: string;
-  setDisplayTitle: React.Dispatch<React.SetStateAction<string>>;
-  showAnsweredButton: boolean;
-  effectiveCreator: boolean;
-}
 
 /**
  * カレンダーデータ読み込み & 回復用フック

@@ -1,5 +1,6 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
 import { WEEK_DAYS, HOURS, COLORS } from './constants/calendar';
+import { CalendarEvent, EventPosition, EventData, StoredEvent, TimeRange, ApprovalResponse, ScheduleHistory } from './types/Calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
 import { useCalendarData } from './hooks/useCalendarData';
 import { Header } from './components/Header/Header';
@@ -14,55 +15,7 @@ import { EventModal } from './components/Modal/EventModal';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-// イベントの型定義
-interface Event {
-  id: string;             // イベント固有ID
-  title: string;          // イベントのタイトル
-  start: Date;            // 開始日時
-  end: Date;              // 終了日時
-  color: string;          // 表示色
-  notes?: string;         // メモ
-  createdBy?: string;     // 作成者名
-  approvals?: { [key: string]: boolean }; // 承認状況マップ
-  approvedBy?: string[];  // 承認済みユーザーリスト
-}
 
-// イベント描画位置情報の型
-interface EventPosition {
-  left: number;           // 左位置の割合
-  width: number;          // 幅の割合
-}
-
-// モーダル表示用の型定義
-interface EventData {
-  show: boolean;          // モーダル表示フラグ
-  start: Date;            // 編集対象開始日時
-  end: Date;              // 編集対象終了日時
-  event?: Event;          // 編集対象イベント（新規なら undefined）
-}
-
-// ローカル保存用のイベント型（Date を ISO 文字列に変換）
-interface StoredEvent extends Omit<Event, 'start' | 'end'> {
-  start: string;
-  end: string;
-}
-
-// 表示時間帯の型
-interface TimeRange {
-  start: number;          // 開始時刻 (hour)
-  end: number;            // 終了時刻 (hour)
-}
-
-// 承認レスポンス型
-interface ApprovalResponse {
-  [eventId: string]: boolean;
-}
-
-// スケジュール履歴用
-interface ScheduleHistory {
-  events: StoredEvent[];
-  sharedAt?: string;      // 共有日時
-}
 
 function App() {
   // URLパラメータから scheduleId を取得（参照専用）
@@ -581,7 +534,7 @@ function App() {
     setCurrentDate(new Date());
   };
 
-  const handleEventDoubleClick = (e: MouseEvent, event: Event) => {
+  const handleEventDoubleClick = (e: MouseEvent, event: CalendarEvent) => {
     if (!effectiveCreator) return;
     
     e.stopPropagation();
@@ -605,7 +558,7 @@ function App() {
       return;
     }
     
-    const newEvent: Event = {
+    const newEvent: CalendarEvent = {
       id: eventData.event?.id || uuidv4(),
       title: newEventTitle,
       start: eventData.start,
