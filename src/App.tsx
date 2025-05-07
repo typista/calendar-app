@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { WEEK_DAYS, HOURS } from './constants/calendar';
+import { WEEK_DAYS, HOURS, COLORS } from './constants/calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
 import { useCalendarData } from './hooks/useCalendarData';
 import { CalendarList } from './components/CalendarList/CalendarList';
@@ -160,9 +160,6 @@ function App() {
 
   // 初回マウント判定
   const isInitialMount = useRef(true);
-
-  // カラーパレット
-  const colors = ['#4285f4', '#ea4335', '#fbbc04', '#34a853', '#46bdc6'];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1368,7 +1365,7 @@ function App() {
                 </label>
                 
                 <div className="flex gap-2">
-                  {colors.map((color) => (
+                  {COLORS.map((color) => (
                     <button
                       key={color}
                       className={`w-6 h-6 rounded-full border-2 ${
