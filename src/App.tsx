@@ -1,5 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { WEEK_DAYS } from './constants/calendar';
+import { WEEK_DAYS, HOURS } from './constants/calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
 import { useCalendarData } from './hooks/useCalendarData';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
@@ -155,8 +155,6 @@ function App() {
   // 初回マウント判定
   const isInitialMount = useRef(true);
 
-  // 時間ラベル（0〜23）
-  const hours = Array.from({ length: 24 }, (_, i) => i);
   // カラーパレット
   const colors = ['#4285f4', '#ea4335', '#fbbc04', '#34a853', '#46bdc6'];
 
@@ -1194,7 +1192,7 @@ function App() {
             onTouchEnd={handleTouchEnd}
           >
             <div className="border-r">
-              {hours.map((hour) => (
+              {HOURS.map((hour) => (
                 <div key={hour} className="h-12 text-right pr-2 text-sm text-gray-500">
                   {hour}:00
                 </div>
@@ -1209,7 +1207,7 @@ function App() {
               return (
                 <div key={day} className="border-r">
                   <div>
-                    {hours.map((hour) => {
+                    {HOURS.map((hour) => {
                       const timeSlotDate = new Date(currentDay);
                       timeSlotDate.setHours(hour, 0, 0, 0);
                       const isPastSlot = isPastTime(timeSlotDate);
