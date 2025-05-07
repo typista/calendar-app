@@ -3,6 +3,7 @@ import { WEEK_DAYS, HOURS } from './constants/calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
 import { useCalendarData } from './hooks/useCalendarData';
 import { CalendarList } from './components/CalendarList/CalendarList';
+import { NameModal } from './components/Modal/NameModal';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -1334,67 +1335,7 @@ function App() {
         </div>
       )}
 
-      {showNameModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md mx-4">
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleNameSubmit();
-            }}>
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <UserCircle2 className="w-6 h-6 text-gray-600" />
-                  <h3 className="text-xl font-medium">
-                    名前を入力してください
-                  </h3>
-                </div>
-                {approvers.length > 0 && (
-                  <div className="mb-4">
-                    <div className="text-sm font-medium text-gray-700 mb-2">
-                      これまでの回答者:
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {approvers.map((approver, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600"
-                        >
-                          {approver}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="あなたの名前"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                />
-                <div className="mt-6 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                    onClick={() => setShowNameModal(false)}
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                    disabled={!userName.trim()}
-                  >
-                    OK
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <NameModal show={showNameModal} userName={userName} setUserName={setUserName} handleKeyDown={handleKeyDown} onSubmit={handleNameSubmit} onClose={setShowNameModal} />
 
       {showTitleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
