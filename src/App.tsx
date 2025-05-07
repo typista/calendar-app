@@ -1077,7 +1077,7 @@ function App() {
           <div className="h-16 px-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button className="p-3 hover:bg-gray-100 rounded-full">
-                <Menu className="w-6 h-6 text-gray-600" />
+                <Calendar className="w-6 h-6 text-gray-600" />
               </button>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl text-gray-800">カレンダー</h1>
