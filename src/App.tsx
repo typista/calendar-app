@@ -1349,9 +1349,30 @@ function App() {
         </div>
       )}
 
-      <NameModal show={showNameModal} userName={userName} setUserName={setUserName} handleKeyDown={handleKeyDown} onSubmit={handleNameSubmit} onClose={handleNameModalClose} />
-      <TitleModal show={showTitleModal} scheduleTitle={scheduleTitle} setScheduleTitle={setScheduleTitle} setDisplayTitle={setDisplayTitle} handleKeyDown={handleKeyDown} onSubmit={handleTitleSubmit} onClose={handleTitleModalClose} />
-      <ScheduleHistoryModal show={showScheduleHistoryModal} scheduleIds={scheduleIds} handleCopyHistoryUrl={handleCopyHistoryUrl} onClick={setShowScheduleHistoryModal} onClose={handleScheduleHistoryClose} />
+      <NameModal
+        show={showNameModal}
+        userName={userName}
+        setUserName={setUserName}
+        handleKeyDown={handleKeyDown}
+        onSubmit={handleNameSubmit}
+        onClose={handleNameModalClose}
+      />
+      <TitleModal
+        show={showTitleModal}
+        scheduleTitle={scheduleTitle}
+        setScheduleTitle={setScheduleTitle}
+        setDisplayTitle={setDisplayTitle}
+        handleKeyDown={handleKeyDown}
+        onSubmit={handleTitleSubmit}
+        onClose={handleTitleModalClose}
+      />
+      <ScheduleHistoryModal
+        show={showScheduleHistoryModal}
+        scheduleIds={scheduleIds}
+        handleCopyHistoryUrl={handleCopyHistoryUrl}
+        onClick={setShowScheduleHistoryModal}
+        onClose={handleScheduleHistoryClose}
+      />
 
       {showAnsweredModal && (
         <div 
