@@ -1,5 +1,6 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { formatDate, formatEventTime, formatEventDate } from './utils/dateUtils';
+import { WEEK_DAYS } from './constants/calendar';
+import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
 import { useCalendarData } from './hooks/useCalendarData';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -154,8 +155,6 @@ function App() {
   // 初回マウント判定
   const isInitialMount = useRef(true);
 
-  // 曜日ラベル
-  const days = ['日', '月', '火', '水', '木', '金', '土'];
   // 時間ラベル（0〜23）
   const hours = Array.from({ length: 24 }, (_, i) => i);
   // カラーパレット
@@ -979,20 +978,6 @@ function App() {
     );
   };
 
-  const getDayNumbers = () => {
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    
-    return days.map((_, index) => {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + index);
-      return {
-        number: date.getDate(),
-        isToday: date.toDateString() === new Date().toDateString()
-      };
-    });
-  };
-
   const renderEventCard = (event: Event) => {
     // 当該ユーザーがこのイベントを作成した or マスター権限がある場合のみ編集モーダルを開ける
     const allowEdit = isCreator || event.createdBy === userName;
@@ -1183,8 +1168,8 @@ function App() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="grid grid-cols-8 border-b">
             <div className="border-r" />
-            {days.map((day, index) => {
-              const dayInfo = getDayNumbers()[index];
+            {WEEK_DAYS.map((day, index) => {
+              const dayInfo = getDayNumbers(currentDate)[index];
               return (
                 <div key={day} className="border-r">
                   <div className="h-14 px-1 sm:px-2 flex flex-col items-center justify-center">
@@ -1215,7 +1200,7 @@ function App() {
                 </div>
               ))}
             </div>
-            {days.map((day, index) => {
+            {WEEK_DAYS.map((day, index) => {
               const weekStart = new Date(currentDate);
               weekStart.setDate(weekStart.getDate() - weekStart.getDay());
               const currentDay = new Date(weekStart);
