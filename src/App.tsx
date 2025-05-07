@@ -4,6 +4,7 @@ import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './u
 import { useCalendarData } from './hooks/useCalendarData';
 import { CalendarList } from './components/CalendarList/CalendarList';
 import { NameModal } from './components/Modal/NameModal';
+import { TitleModal } from './components/Modal/TitleModal';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -1336,54 +1337,7 @@ function App() {
       )}
 
       <NameModal show={showNameModal} userName={userName} setUserName={setUserName} handleKeyDown={handleKeyDown} onSubmit={handleNameSubmit} onClose={setShowNameModal} />
-
-      {showTitleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md mx-4">
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleTitleSubmit();
-            }}>
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <PenSquare className="w-6 h-6 text-gray-600" />
-                  <h3 className="text-xl font-medium">
-                    スケジュール調整のタイトル
-                  </h3>
-                </div>
-                <input
-                  type="text"
-                  placeholder="タイトルを入力"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  value={scheduleTitle}
-                  onChange={(e) => {
-                    setScheduleTitle(e.target.value);
-                    setDisplayTitle(e.target.value);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                />
-                <div className="mt-6 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                    onClick={() => setShowTitleModal(false)}
-                  >
-                    キャンセル
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                    disabled={!scheduleTitle.trim()}
-                  >
-                    保存
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <TitleModal show={showTitleModal} scheduleTitle={scheduleTitle} setScheduleTitle={setScheduleTitle} setDisplayTitle={setDisplayTitle} handleKeyDown={handleKeyDown} onSubmit={handleTitleSubmit} onClose={setShowTitleModal} />
 
       {showScheduleHistoryModal && (
         <div 
