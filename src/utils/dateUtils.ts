@@ -1,3 +1,5 @@
+import { WEEK_DAYS } from './../constants/calendar';
+
 export const formatDate = (date: Date): string =>
   new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
@@ -17,3 +19,17 @@ export const formatEventDate = (date: Date): string =>
     day: 'numeric',
     weekday: 'short'
   }).format(date);
+
+export const getDayNumbers = (currentDate: Date) => {
+  const weekStart = new Date(currentDate);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  
+  return WEEK_DAYS.map((_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    return {
+      number: date.getDate(),
+      isToday: date.toDateString() === new Date().toDateString()
+    };
+  });
+};
