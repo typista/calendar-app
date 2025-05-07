@@ -1,4 +1,5 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
+import { formatDate, formatEventTime, formatEventDate } from './utils/dateUtils';
 import { useCalendarData } from './hooks/useCalendarData';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -566,29 +567,6 @@ function App() {
         console.error('Failed to copy URL:', error);
       }
     }
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ja-JP', { 
-      year: 'numeric',
-      month: 'long'
-    }).format(date);
-  };
-
-  const formatEventTime = (date: Date) => {
-    return new Intl.DateTimeFormat('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(date);
-  };
-
-  const formatEventDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ja-JP', {
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short'
-    }).format(date);
   };
 
   const handlePrevWeek = () => {
