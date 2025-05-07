@@ -17,7 +17,7 @@ type ScheduleHistoryModalProps = {
     onClose: Dispatch<SetStateAction<boolean>>
   }
   
-  export const ScheduleHistoryModal: React.FC<TitleModalProps> = ({
+  export const ScheduleHistoryModal: React.FC<ScheduleHistoryModalProps> = ({
     show, scheduleIds, handleCopyHistoryUrl, onClick, onClose
   }) => (
     <ModalWrapper show={show} onClose={onClose}>
