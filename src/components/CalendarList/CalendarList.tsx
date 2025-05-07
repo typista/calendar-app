@@ -1,8 +1,102 @@
 import React from 'react';
+import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './../../utils/dateUtils';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 
-export const CalendarList: React.FC<CalendarListProps> = ({ events, onClick, onRender, showBottomSheet, copyButtonText }) => {
-  return (
+export const CalendarList: React.FC<CalendarListProps> = ({ events, userName, isCreator, effectiveCreator, scheduleId, onClick, setEvents, showBottomSheet, copyButtonText }) => {
+    const handleApproval = (eventId: string, approved: boolean) => {
+        setEvents(prevEvents => {
+          const updatedEvents = prevEvents.map(event => {
+            if (event.id === eventId) {
+              const approvals = { ...(event.approvals || {}), [userName]: approved };
+              const approvedBy = approved 
+                ? [...(event.approvedBy || []), userName].filter((v, i, a) => a.indexOf(v) === i)
+                : (event.approvedBy || []).filter(name => name !== userName);
+              return { ...event, approvals, approvedBy };
+            }
+            return event;
+          });
+    
+          if (scheduleId && userName) {
+            const approvals: ApprovalResponse = {};
+            updatedEvents.forEach(event => {
+              if (event.approvals && event.approvals[userName] !== undefined) {
+                approvals[event.id] = event.approvals[userName];
+              }
+            });
+            localStorage.setItem(`calendar-approvals-${scheduleId}-${userName}`, JSON.stringify(approvals));
+          }
+    
+          return updatedEvents;
+        });
+      };
+
+      const renderEventCard = (event: Event) => {
+        // 当該ユーザーがこのイベントを作成した or マスター権限がある場合のみ編集モーダルを開ける
+        const allowEdit = isCreator || event.createdBy === userName;
+        const isEventCreator = event.createdBy === userName;
+        const approval = event.approvals?.[userName];
+        // 回答ボタンは回答者モード(= !effectiveCreator)かつ自分作成でないときだけ
+        const showApprovalButtons = !effectiveCreator && event.createdBy !== userName;
+
+
+        return (
+        <div
+            key={event.id}
+            className="p-3 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
+            style={{ borderLeftColor: event.color, borderLeftWidth: '4px' }}
+            onClick={allowEdit ? (e) => handleEventDoubleClick(e as any, event) : undefined}
+        >
+            <div className="text-sm text-gray-600">
+            {formatEventDate(event.start)}
+            </div>
+            <div className="text-sm font-medium text-gray-600">
+            {formatEventTime(event.start)} 〜 {formatEventTime(event.end)}
+            </div>
+            <div className="font-medium text-gray-800">
+            {event.title}
+            </div>
+            {event.notes && (
+            <div className="text-sm text-gray-600 mt-1 line-clamp-2">
+                {event.notes}
+            </div>
+            )}
+            {showApprovalButtons && (
+            <div className="flex items-center gap-2 mt-2">
+                <button
+                className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
+                    approval === true
+                    ? 'bg-green-100 text-green-700'
+                    : 'hover:bg-green-50 text-gray-600'
+                }`}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleApproval(event.id, true);
+                }}
+                >
+                <Check className="w-4 h-4" />
+                OK
+                </button>
+                <button
+                className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
+                    approval === false
+                    ? 'bg-red-100 text-red-700'
+                    : 'hover:bg-red-50 text-gray-600'
+                }`}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleApproval(event.id, false);
+                }}
+                >
+                <XIcon className="w-4 h-4" />
+                NG
+                </button>
+            </div>
+            )}
+        </div>
+        );
+    };
+
+    return (
     <div>
         <div className="hidden md:block w-80 border-l">
             <div className="h-16 px-4 border-b flex items-center justify-between">
@@ -27,7 +121,7 @@ export const CalendarList: React.FC<CalendarListProps> = ({ events, onClick, onR
                 ) : (
                 events
                     .sort((a, b) => a.start.getTime() - b.start.getTime())
-                    .map(event => onRender(event))
+                    .map(event => renderEventCard(event))
                 )}
             </div>
             </div>
@@ -74,7 +168,7 @@ export const CalendarList: React.FC<CalendarListProps> = ({ events, onClick, onR
                 ) : (
                     events
                     .sort((a, b) => a.start.getTime() - b.start.getTime())
-                    .map(event => onRender(event))
+                    .map(event => renderEventCard(event))
                 )}
                 </div>
             </div>
