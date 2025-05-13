@@ -518,22 +518,6 @@ function App() {
     }
   };
 
-  const handlePrevWeek = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() - 7);
-    setCurrentDate(newDate);
-  };
-
-  const handleNextWeek = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + 7);
-    setCurrentDate(newDate);
-  };
-
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
   const handleEventDoubleClick = (e: MouseEvent, event: CalendarEvent) => {
     if (!effectiveCreator) return;
     
@@ -601,10 +585,8 @@ function App() {
             handleShareEvents={handleShareEvents}
             copyButtonText={copyButtonText}
             setShowSettingsModal={setShowSettingsModal}
-            handleToday={handleToday}
-            handlePrevWeek={handlePrevWeek}
-            handleNextWeek={handleNextWeek}
             currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
             hasValidSchedules={hasValidSchedules}
             hasAnsweredSchedules={hasAnsweredSchedules}
             handleScheduleHistoryClick={handleScheduleHistoryClick}

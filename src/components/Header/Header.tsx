@@ -3,7 +3,6 @@ import { HeaderProps } from './Header.types';
 import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
 import { formatDate } from './../../utils/dateUtils';
 
-
 export const Header: React.FC<HeaderProps> = ({
   displayTitle,
   isCreator,
@@ -14,10 +13,8 @@ export const Header: React.FC<HeaderProps> = ({
   handleShareEvents,
   copyButtonText,
   setShowSettingsModal,
-  handleToday,
-  handlePrevWeek,
-  handleNextWeek,
   currentDate,
+  setCurrentDate,
   hasValidSchedules,
   hasAnsweredSchedules,
   handleScheduleHistoryClick,
@@ -25,7 +22,24 @@ export const Header: React.FC<HeaderProps> = ({
   scheduleIds,
   handleAnsweredSchedulesClick,
   setEventData
-}) => (
+}) => {
+  const handlePrevWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setCurrentDate(newDate);
+  };
+
+  const handleNextWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setCurrentDate(newDate);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  return (
   <div>
     <header className="flex flex-col">
       <div className="h-16 px-4 border-b flex items-center justify-between">
@@ -145,4 +159,5 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   </div>
-);
+  );
+}

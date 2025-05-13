@@ -1,8 +1,23 @@
 import React from 'react';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './../../utils/dateUtils';
+import { CalendarListProps } from './CalendarList.types';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 
-export const CalendarList: React.FC<CalendarListProps> = ({ events, userName, isCreator, effectiveCreator, scheduleId, onClick, setEvents, showBottomSheet, copyButtonText }) => {
+export const CalendarList: React.FC<CalendarListProps> = ({
+    events,
+    userName,
+    isCreator,
+    effectiveCreator,
+    scheduleId,
+    onClick,
+    setEvents,
+    showBottomSheet,
+    copyButtonText,
+    setEventData,
+    setNewEventTitle,
+    setNewEventColor,
+    setNewEventNotes
+  }) => {
     const handleApproval = (eventId: string, approved: boolean) => {
         setEvents(prevEvents => {
           const updatedEvents = prevEvents.map(event => {
@@ -30,6 +45,17 @@ export const CalendarList: React.FC<CalendarListProps> = ({ events, userName, is
         });
       };
 
+      const handleEventDoubleClick = (e: MouseEvent, event: CalendarEvent) => {
+        if (!effectiveCreator) return;
+        
+        e.stopPropagation();
+        setEventData({ show: true, start: event.start, end: event.end, event });
+        setNewEventTitle(event.title);
+        setNewEventColor(event.color);
+        setNewEventNotes(event.notes || '');
+        setShowBottomSheet(false);
+      };
+    
       const renderEventCard = (event: Event) => {
         // 当該ユーザーがこのイベントを作成した or マスター権限がある場合のみ編集モーダルを開ける
         const allowEdit = isCreator || event.createdBy === userName;

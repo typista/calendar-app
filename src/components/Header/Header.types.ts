@@ -10,10 +10,8 @@ export interface HeaderProps {
   handleShareEvents: () => void;
   copyButtonText: string;
   setShowSettingsModal: (boolean) => void;
-  handleToday: () => void;
-  handlePrevWeek: () => void;
-  handleNextWeek: () => void;
   currentDate: date;
+  setCurrentDate: (date) => void;
   hasValidSchedules: boolean;
   hasAnsweredSchedules: boolean;
   handleScheduleHistoryClick: () => void;
