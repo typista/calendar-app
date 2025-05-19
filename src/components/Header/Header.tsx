@@ -1,8 +1,8 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
 import { HeaderProps } from './Header.types';
 import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
-import { getJsonItem, setJsonItem, removeJsonItem } from './../../utils/storage';
-import { formatDate } from './../../utils/dateUtils';
+import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
+import { formatDate } from '../../utils/dateUtils';
 import { useShareEvents } from '../../utils/shareEvents';
 
 export const Header: React.FC<HeaderProps> = ({

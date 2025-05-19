@@ -1,4 +1,4 @@
-import { WEEK_DAYS } from './../constants/calendar';
+import { WEEK_DAYS } from '../constants/calendar';
 
 export const formatDate = (date: Date): string =>
   new Intl.DateTimeFormat('ja-JP', {

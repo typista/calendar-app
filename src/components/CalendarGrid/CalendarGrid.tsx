@@ -1,6 +1,6 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { WEEK_DAYS, HOURS, COLORS } from './../../constants/calendar';
-import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './../../utils/dateUtils';
+import { WEEK_DAYS, HOURS, COLORS } from '../../constants/calendar';
+import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dateUtils';
 import { CalendarGridProps } from './CalendarGrid.types';
 import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
 

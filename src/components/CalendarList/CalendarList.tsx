@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './../../utils/dateUtils';
+import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dateUtils';
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { CalendarListProps } from './CalendarList.types';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
