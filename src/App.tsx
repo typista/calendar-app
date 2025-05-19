@@ -226,10 +226,6 @@ function App() {
    * 回答者用：OK/NG/未回答 を localStorage に保存し、
    * OK のみを eventsParam として URL コピー
    */
-  /**
-   * 回答者用：OK/NG/未回答を localStorage に保存しつつ、
-   * URLコピー用にはOKのみを eventsParam にする
-   */
   const handleCopyUrl = async (): Promise<void> => {
     // --- 1) 候補スロット本体を保存 ---
     const storedEvents: StoredEvent[] = events.map(ev => ({
