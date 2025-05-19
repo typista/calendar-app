@@ -127,21 +127,21 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const eventsParam = params.get('events');
-    const titleParam = params.get('title');
-    const idParam = params.get('id');
+    const events = params.get('events');
+    const title = params.get('title');
+    const id = params.get('id');
     
-    if (eventsParam) {
+    if (events) {
       try {
-        const decodedEvents = JSON.parse(decodeURIComponent(atob(eventsParam)));
+        const decodedEvents = JSON.parse(decodeURIComponent(atob(events)));
         const parsedEvents = decodedEvents.map((event: StoredEvent) => ({
           ...event,
           start: new Date(event.start),
           end: new Date(event.end)
         }));
 
-        if (userName && idParam) {
-          const storedApprovals = localStorage.getItem(`calendar-approvals-${idParam}-${userName}`);
+        if (userName && id) {
+          const storedApprovals = localStorage.getItem(`calendar-approvals-${id}-${userName}`);
           if (storedApprovals) {
             const approvals: ApprovalResponse = JSON.parse(storedApprovals);
             parsedEvents.forEach(event => {
@@ -159,19 +159,19 @@ function App() {
 
         setEvents(parsedEvents);
 
-        if (idParam) {
-          setScheduleId(idParam);
+        if (id) {
+          setScheduleId(id);
           const storedData: ScheduleHistory = {
             events: decodedEvents,
             sharedAt: new Date().toISOString()
           };
-          localStorage.setItem(`calendar-events-${idParam}`, JSON.stringify(storedData));
+          localStorage.setItem(`calendar-events-${id}`, JSON.stringify(storedData));
           
-          if (titleParam) {
-            const decodedTitle = decodeURIComponent(titleParam);
+          if (title) {
+            const decodedTitle = decodeURIComponent(title);
             setScheduleTitle(decodedTitle);
             setDisplayTitle(decodedTitle);
-            localStorage.setItem(`calendar-schedule-title-${idParam}`, decodedTitle);
+            localStorage.setItem(`calendar-schedule-title-${id}`, decodedTitle);
           }
         }
 
@@ -189,12 +189,12 @@ function App() {
         }
       } catch (error) {
         console.error('Failed to parse events from URL:', error);
-        if (idParam) {
-          loadFromLocalStorage(idParam);
+        if (id) {
+          loadFromLocalStorage(id);
         }
       }
-    } else if (idParam) {
-      loadFromLocalStorage(idParam);
+    } else if (id) {
+      loadFromLocalStorage(id);
     } else if (isCreator && isInitialMount.current) {
       const newScheduleId = uuidv4();
       setScheduleId(newScheduleId);
@@ -516,17 +516,6 @@ function App() {
         console.error('Failed to copy URL:', error);
       }
     }
-  };
-
-  const handleEventDoubleClick = (e: MouseEvent, event: CalendarEvent) => {
-    if (!effectiveCreator) return;
-    
-    e.stopPropagation();
-    setEventData({ show: true, start: event.start, end: event.end, event });
-    setNewEventTitle(event.title);
-    setNewEventColor(event.color);
-    setNewEventNotes(event.notes || '');
-    setShowBottomSheet(false);
   };
 
   const handleEventModalClose = () =>{
