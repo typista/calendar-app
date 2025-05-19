@@ -1,4 +1,4 @@
-import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
+import React, { useState, useRef, useCallback, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
 import { WEEK_DAYS, HOURS, COLORS } from './constants/calendar';
 import { CalendarEvent, EventPosition, EventData, StoredEvent, TimeRange, ApprovalResponse, ScheduleHistory } from './types/Calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
@@ -163,7 +163,7 @@ function App() {
     }
   }, [scheduleIds]);
 
-  const loadFromLocalStorage = (id: string) => {
+  const loadFromLocalStorage = useCallback((id: string) => {
     const storedData = getJsonItem(`calendar-events-${id}`);
     const storedTitle = getJsonItem(`calendar-schedule-title-${id}`);
     
@@ -180,7 +180,7 @@ function App() {
       setScheduleTitle(storedTitle);
       setDisplayTitle(storedTitle);
     }
-  };
+  }, []);
 
   /**
    * 回答者用：OK/NG/未回答 を localStorage に保存し、
