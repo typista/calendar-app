@@ -1,8 +1,8 @@
 import React, { FormEvent } from 'react'
 import { ModalWrapper } from './ModalWrapper'
-import { WEEK_DAYS, HOURS, COLORS } from './../../constants/calendar';
-import { EventData } from './../../types/Calendar';
-import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './../../utils/dateUtils';
+import { WEEK_DAYS, HOURS, COLORS } from '../../constants/calendar';
+import { EventData } from '../../types/Calendar';
+import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dateUtils';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 
 type EventModalProps = {

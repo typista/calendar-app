@@ -53,14 +53,6 @@ function App() {
 
   // イベントリスト
   
-  // ドラッグ選択関連の状態
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ dayIndex: number; hourIndex: number; minutes: number } | null>(null);
-  const [dragEnd, setDragEnd] = useState<{ dayIndex: number; hourIndex: number; minutes: number } | null>(null);
-
-  // 確定済みイベントドラッグ移動用
-  const [draggingEvent, setDraggingEvent] = useState<{ event: Event, offsetY: number } | null>(null);
-
   // 予定追加・編集モーダル用状態
   const [eventData, setEventData] = useState<EventData>({ show: false, start: new Date(), end: new Date() });
   const [newEventTitle, setNewEventTitle] = useState('');
@@ -419,20 +411,12 @@ function App() {
           timeRange={timeRange}
           currentTime={currentTime}
           events={events}
-          draggingEvent={draggingEvent}
           effectiveCreator={effectiveCreator}
           currentDate={currentDate}
-          setIsDragging={setIsDragging}
-          setDragStart={setDragStart}
-          setDragEnd={setDragEnd}
-          isDragging={isDragging}
-          dragStart={dragStart}
-          dragEnd={dragEnd}
           setEventData={setEventData}
           setNewEventTitle={setNewEventTitle}
           setNewEventColor={setNewEventColor}
           setNewEventNotes={setNewEventNotes}
-          setDraggingEvent={setDraggingEvent}
         />
       </div>
 

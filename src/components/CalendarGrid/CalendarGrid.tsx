@@ -9,21 +9,20 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   timeRange,
   currentTime,
   events,
-  draggingEvent,
   effectiveCreator,
   currentDate,
-  setIsDragging,
-  setDragStart,
-  setDragEnd,
-  isDragging,
-  dragStart,
-  dragEnd,
   setEventData,
   setNewEventTitle,
   setNewEventColor,
-  setNewEventNotes,
-  setDraggingEvent
+  setNewEventNotes
 }) => {
+  // ドラッグ選択関連の状態
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ dayIndex: number; hourIndex: number; minutes: number } | null>(null);
+  const [dragEnd, setDragEnd] = useState<{ dayIndex: number; hourIndex: number; minutes: number } | null>(null);
+
+  // 確定済みイベントドラッグ移動用
+  const [draggingEvent, setDraggingEvent] = useState<{ event: Event, offsetY: number } | null>(null);
 
   const isTimeInRange = (hour: number) => {
     return hour >= timeRange.start && hour < timeRange.end;
