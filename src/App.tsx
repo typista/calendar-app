@@ -389,51 +389,51 @@ function App() {
   });
 
   return (
-      <div className="h-screen flex bg-white">
-        <div className="flex-1 flex flex-col">
+    <div className="h-screen flex bg-white">
+      <div className="flex-1 flex flex-col">
 
-          <Header
-            displayTitle={displayTitle}
-            userName={userName}
-            isCreator={isCreator}
-            events={events}
-            scheduleTitle={scheduleTitle}
-            approvers={approvers}
-            effectiveCreator={effectiveCreator}
-            showCopiedToast={showCopiedToast}
-            setShowTitleModal={setShowTitleModal}
-            setShowBottomSheet={setShowBottomSheet}
-            copyButtonText={copyButtonText}
-            setShowSettingsModal={setShowSettingsModal}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            handleScheduleHistoryClick={handleScheduleHistoryClick}
-            scheduleId={scheduleId}
-            scheduleIds={scheduleIds}
-            handleAnsweredSchedulesClick={handleAnsweredSchedulesClick}
-            setEventData={setEventData}
-          />
+        <Header
+          displayTitle={displayTitle}
+          userName={userName}
+          isCreator={isCreator}
+          events={events}
+          scheduleTitle={scheduleTitle}
+          approvers={approvers}
+          effectiveCreator={effectiveCreator}
+          showCopiedToast={showCopiedToast}
+          setShowTitleModal={setShowTitleModal}
+          setShowBottomSheet={setShowBottomSheet}
+          copyButtonText={copyButtonText}
+          setShowSettingsModal={setShowSettingsModal}
+          currentDate={currentDate}
+          setCurrentDate={setCurrentDate}
+          handleScheduleHistoryClick={handleScheduleHistoryClick}
+          scheduleId={scheduleId}
+          scheduleIds={scheduleIds}
+          handleAnsweredSchedulesClick={handleAnsweredSchedulesClick}
+          setEventData={setEventData}
+        />
 
-          <CalendarGrid
-            gridRef={gridRef}
-            timeRange={timeRange}
-            currentTime={currentTime}
-            events={events}
-            draggingEvent={draggingEvent}
-            effectiveCreator={effectiveCreator}
-            currentDate={currentDate}
-            setIsDragging={setIsDragging}
-            setDragStart={setDragStart}
-            setDragEnd={setDragEnd}
-            isDragging={isDragging}
-            dragStart={dragStart}
-            dragEnd={dragEnd}
-            setEventData={setEventData}
-            setNewEventTitle={setNewEventTitle}
-            setNewEventColor={setNewEventColor}
-            setNewEventNotes={setNewEventNotes}
-            setDraggingEvent={setDraggingEvent}
-          />
+        <CalendarGrid
+          gridRef={gridRef}
+          timeRange={timeRange}
+          currentTime={currentTime}
+          events={events}
+          draggingEvent={draggingEvent}
+          effectiveCreator={effectiveCreator}
+          currentDate={currentDate}
+          setIsDragging={setIsDragging}
+          setDragStart={setDragStart}
+          setDragEnd={setDragEnd}
+          isDragging={isDragging}
+          dragStart={dragStart}
+          dragEnd={dragEnd}
+          setEventData={setEventData}
+          setNewEventTitle={setNewEventTitle}
+          setNewEventColor={setNewEventColor}
+          setNewEventNotes={setNewEventNotes}
+          setDraggingEvent={setDraggingEvent}
+        />
       </div>
 
       <CalendarList
