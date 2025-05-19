@@ -1,5 +1,6 @@
 // hooks/useCalendarData.ts
 import { useState, useRef, useEffect } from 'react'
+import { getJsonItem, setJsonItem, removeJsonItem } from '../utils/storage';
 import { StoredEvent, ApprovalInfo, ApprovalResponse, UseCalendarDataResult } from '../types/Calendar';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,9 +25,9 @@ export function useCalendarData(
 
   // localStorage から候補スロットとタイトルを読み込む
   const loadLocal = (id: string) => {
-    const data = localStorage.getItem(`calendar-events-${id}`);
+    const data = getJsonItem(`calendar-events-${id}`);
     if (data) {
-      const { events: storedEvents } = JSON.parse(data) as { events: StoredEvent[] };
+      const { events: storedEvents } = data as { events: StoredEvent[] };
       originalCount.current = storedEvents.length;
       setEvents(
         storedEvents.map(ev => ({
@@ -36,7 +37,7 @@ export function useCalendarData(
         }))
       );
     }
-    const title = localStorage.getItem(`calendar-schedule-title-${id}`);
+    const title = getJsonItem(`calendar-schedule-title-${id}`);
     if (title) {
       setScheduleTitle(title);
       setDisplayTitle(title);
@@ -65,16 +66,16 @@ export function useCalendarData(
         setEvents(parsed);
         // 作成者のみ localStorage に保存
         if (isCreator) {
-          localStorage.setItem(
+          setJsonItem(
             `calendar-events-${id}`,
-            JSON.stringify({ events: decoded, sharedAt: new Date().toISOString() })
+            { events: decoded, sharedAt: new Date().toISOString() }
           );
         }
         if (titleParam) {
           const t = decodeURIComponent(titleParam);
           setScheduleTitle(t);
           setDisplayTitle(t);
-          if (isCreator) localStorage.setItem(`calendar-schedule-title-${id}`, t);
+          if (isCreator) setJsonItem(`calendar-schedule-title-${id}`, t);
         }
       } catch {
         loadLocal(id);
@@ -87,9 +88,9 @@ export function useCalendarData(
     if (id && user) {
       const baseKey = `calendar-approvals-${id}-${user}`;
       const key = respParam ? `${baseKey}-${respParam}` : baseKey;
-      const json = localStorage.getItem(key);
+      const json = getJsonItem(key);
       if (json) {
-        const approvals = JSON.parse(json) as ApprovalResponse;
+        const approvals = json as ApprovalResponse;
         setEvents(prev =>
           prev.map(ev => {
             const info = approvals[ev.id];

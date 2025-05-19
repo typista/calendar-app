@@ -2,6 +2,7 @@ import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEve
 import { WEEK_DAYS, HOURS, COLORS } from './constants/calendar';
 import { CalendarEvent, EventPosition, EventData, StoredEvent, TimeRange, ApprovalResponse, ScheduleHistory } from './types/Calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
+import { getJsonItem, setJsonItem, removeJsonItem } from './utils/storage';
 import { useCalendarData } from './hooks/useCalendarData';
 import { Header } from './components/Header/Header';
 import { CalendarGrid } from './components/CalendarGrid/CalendarGrid';
@@ -26,7 +27,7 @@ function App() {
 
   // ユーザー名
   const [userName, setUserName] = useState(() => {
-    const stored = localStorage.getItem('calendar-user-name');
+    const stored = getJsonItem('calendar-user-name');
     return stored || '';
   });
 
@@ -38,8 +39,8 @@ function App() {
 
   // これまで参照した scheduleIds を localStorage から初期化
   const [scheduleIds, setScheduleIds] = useState<string[]>(() => {
-    const stored = localStorage.getItem('calendar-schedule-ids');
-    return stored ? JSON.parse(stored) : [];
+    const stored = getJsonItem('calendar-schedule-ids');
+    return stored ? stored : [];
   });
 
   // 有効なスケジュールがあるかフラグ
@@ -85,8 +86,8 @@ function App() {
 
   // 表示時間帯を localStorage から初期化
   const [timeRange, setTimeRange] = useState<TimeRange>(() => {
-    const stored = localStorage.getItem('calendar-time-range');
-    return stored ? JSON.parse(stored) : { start: 8, end: 21 };
+    const stored = getJsonItem('calendar-time-range');
+    return stored ? stored : { start: 8, end: 21 };
   });
 
   // 承認者リスト
@@ -141,9 +142,8 @@ function App() {
         }));
 
         if (userName && id) {
-          const storedApprovals = localStorage.getItem(`calendar-approvals-${id}-${userName}`);
-          if (storedApprovals) {
-            const approvals: ApprovalResponse = JSON.parse(storedApprovals);
+          const approvals: ApprovalResponse = getJsonItem(`calendar-approvals-${id}-${userName}`);
+          if (approvals) {
             parsedEvents.forEach(event => {
               if (approvals[event.id] !== undefined) {
                 event.approvals = event.approvals || {};
@@ -165,13 +165,13 @@ function App() {
             events: decodedEvents,
             sharedAt: new Date().toISOString()
           };
-          localStorage.setItem(`calendar-events-${id}`, JSON.stringify(storedData));
+          setJsonItem(`calendar-events-${id}`, storedData);
           
           if (title) {
             const decodedTitle = decodeURIComponent(title);
             setScheduleTitle(decodedTitle);
             setDisplayTitle(decodedTitle);
-            localStorage.setItem(`calendar-schedule-title-${id}`, decodedTitle);
+            setJsonItem(`calendar-schedule-title-${id}`, decodedTitle);
           }
         }
 
@@ -211,49 +211,49 @@ function App() {
         end: event.end.toISOString()
       }));
 
-      const existingData = localStorage.getItem(`calendar-events-${scheduleId}`);
-      const existingSchedule: ScheduleHistory | null = existingData ? JSON.parse(existingData) : null;
+      const existingData = getJsonItem(`calendar-events-${scheduleId}`);
+      const existingSchedule: ScheduleHistory | null = existingData;
 
       const scheduleData: ScheduleHistory = {
         events: storedEvents,
         sharedAt: existingSchedule?.sharedAt
       };
 
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify(scheduleData));
+      setJsonItem(`calendar-events-${scheduleId}`, scheduleData);
     }
   }, [events, scheduleId]);
 
   useEffect(() => {
     if (scheduleId && scheduleTitle) {
-      localStorage.setItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
+      setJsonItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
     }
   }, [scheduleTitle, scheduleId]);
 
   useEffect(() => {
-    localStorage.setItem('calendar-time-range', JSON.stringify(timeRange));
+    setJsonItem('calendar-time-range', timeRange);
   }, [timeRange]);
 
   useEffect(() => {
     if (userName) {
-      localStorage.setItem('calendar-user-name', userName);
+      setJsonItem('calendar-user-name', userName);
     }
   }, [userName]);
 
   useEffect(() => {
     if (scheduleTitle) {
-      localStorage.setItem('calendar-schedule-title', scheduleTitle);
+      setJsonItem('calendar-schedule-title', scheduleTitle);
     }
   }, [scheduleTitle]);
 
   useEffect(() => {
     if (scheduleIds.length > 0) {
-      localStorage.setItem('calendar-schedule-ids', JSON.stringify(scheduleIds));
+      setJsonItem('calendar-schedule-ids', scheduleIds);
     }
   }, [scheduleIds]);
 
   useEffect(() => {
     if (scheduleId && userName) {
-      const hasAnswers = localStorage.getItem(`calendar-approvals-${scheduleId}-${userName}`) !== null;
+      const hasAnswers = getJsonItem(`calendar-approvals-${scheduleId}-${userName}`) !== null;
       setHasAnsweredSchedules(hasAnswers);
     } else {
       setHasAnsweredSchedules(false);
@@ -263,10 +263,10 @@ function App() {
   useEffect(() => {
     let hasValid = false;
     for (const id of scheduleIds) {
-      const storedData = localStorage.getItem(`calendar-events-${id}`);
+      const storedData = getJsonItem(`calendar-events-${id}`);
       if (storedData) {
         try {
-          const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
+          const { sharedAt } = storedData as ScheduleHistory;
           if (sharedAt && !isNaN(new Date(sharedAt).getTime())) {
             hasValid = true;
             break;
@@ -280,11 +280,11 @@ function App() {
   }, [scheduleIds]);
 
   const loadFromLocalStorage = (id: string) => {
-    const storedData = localStorage.getItem(`calendar-events-${id}`);
-    const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
+    const storedData = getJsonItem(`calendar-events-${id}`);
+    const storedTitle = getJsonItem(`calendar-schedule-title-${id}`);
     
     if (storedData) {
-      const { events: storedEvents }: ScheduleHistory = JSON.parse(storedData);
+      const { events: storedEvents }: ScheduleHistory = storedData;
       setEvents(storedEvents.map(event => ({
         ...event,
         start: new Date(event.start),
@@ -317,9 +317,9 @@ function App() {
       approvals: ev.approvals,
       approvedBy: ev.approvedBy
     }));
-    localStorage.setItem(
+    setJsonItem(
       `calendar-events-${scheduleId}`,
-      JSON.stringify({ events: storedEvents, sharedAt: new Date().toISOString() })
+      { events: storedEvents, sharedAt: new Date().toISOString() }
     );
 
     // --- 2) 全回答を保存 (未回答はOK扱い) ---
@@ -328,9 +328,9 @@ function App() {
       const approved = ev.approvals?.[userName] ?? true;
       approvalMap[ev.id] = approved;
     });
-    localStorage.setItem(
+    setJsonItem(
       `calendar-approvals-${scheduleId}-${userName}`,
-      JSON.stringify(approvalMap)
+      approvalMap
     );
 
     // --- 3) ブラウザURLを id+title のみで更新 ---
@@ -421,10 +421,10 @@ function App() {
         setShowCopiedToast(false);
       }, 2000);
 
-      localStorage.setItem(`calendar-events-${scheduleId}`, JSON.stringify({
+      setJsonItem(`calendar-events-${scheduleId}`, {
         events: storedEvents,
         sharedAt: new Date().toISOString()
-      }));
+      });
     } catch (error) {
       console.error('Failed to copy URL:', error);
       setCopyButtonText('コピーに失敗しました');
@@ -460,9 +460,9 @@ function App() {
     setIsScheduleMaster(true);
     
     setIsCreator(true);
-    const updatedIds = Array.from(new Set([...(JSON.parse(localStorage.getItem('calendar-schedule-ids')||'[]')), scheduleId]));
-    localStorage.setItem('calendar-schedule-ids', JSON.stringify(updatedIds));
-    localStorage.setItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
+    const updatedIds = Array.from(new Set([...(getJsonItem('calendar-schedule-ids')||'[]'), scheduleId]));
+    setJsonItem('calendar-schedule-ids', updatedIds);
+    setJsonItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
   };
 
   const handleTitleModalClose = () => {
@@ -486,11 +486,11 @@ function App() {
   };
 
   const handleCopyHistoryUrl = async (id: string) => {
-    const storedData = localStorage.getItem(`calendar-events-${id}`);
-    const storedTitle = localStorage.getItem(`calendar-schedule-title-${id}`);
+    const storedData = getJsonItem(`calendar-events-${id}`);
+    const storedTitle = getJsonItem(`calendar-schedule-title-${id}`);
     
     if (storedData) {
-      const { events: storedEvents }: ScheduleHistory = JSON.parse(storedData);
+      const { events: storedEvents }: ScheduleHistory = storedData;
       const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
       const url = new URL(window.location.href);
       url.searchParams.set('events', encodedEvents);

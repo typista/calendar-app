@@ -1,4 +1,5 @@
 import React, { FormEvent } from 'react'
+import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { ModalWrapper } from './ModalWrapper'
 import { ScheduleHistory } from '../../types/Calendar';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
@@ -35,12 +36,12 @@ type ScheduleHistoryModalProps = {
               </div>
               <div className="max-h-[60vh] overflow-y-auto divide-y">
               {scheduleIds.map(id => {
-                  const storedData = localStorage.getItem(`calendar-events-${id}`);
+                  const storedData = getJsonItem(`calendar-events-${id}`);
                   if (!storedData) return null;
   
                   try {
-                  const { sharedAt } = JSON.parse(storedData) as ScheduleHistory;
-                  const title = localStorage.getItem(`calendar-schedule-title-${id}`) || '無題の候補日程';
+                  const { sharedAt } = storedData as ScheduleHistory;
+                  const title = getJsonItem(`calendar-schedule-title-${id}`) || '無題の候補日程';
                   const date = new Date(sharedAt);
                   
                   // Skip invalid dates
