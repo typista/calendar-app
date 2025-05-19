@@ -5,6 +5,7 @@ import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './u
 import { getJsonItem, setJsonItem, removeJsonItem } from './utils/storage';
 import { useCalendarData } from './hooks/useCalendarData';
 import { Header } from './components/Header/Header';
+import { useCalendarInitializer } from './components/CalendarInitializer/CalendarInitializer';
 import { CalendarGrid } from './components/CalendarGrid/CalendarGrid';
 import { CalendarList } from './components/CalendarList/CalendarList';
 import { NameModal } from './components/Modal/NameModal';
@@ -125,83 +126,6 @@ function App() {
 
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const events = params.get('events');
-    const title = params.get('title');
-    const id = params.get('id');
-    
-    if (events) {
-      try {
-        const decodedEvents = JSON.parse(decodeURIComponent(atob(events)));
-        const parsedEvents = decodedEvents.map((event: StoredEvent) => ({
-          ...event,
-          start: new Date(event.start),
-          end: new Date(event.end)
-        }));
-
-        if (userName && id) {
-          const approvals: ApprovalResponse = getJsonItem(`calendar-approvals-${id}-${userName}`);
-          if (approvals) {
-            parsedEvents.forEach(event => {
-              if (approvals[event.id] !== undefined) {
-                event.approvals = event.approvals || {};
-                event.approvals[userName] = approvals[event.id];
-                event.approvedBy = event.approvedBy || [];
-                if (approvals[event.id] && !event.approvedBy.includes(userName)) {
-                  event.approvedBy.push(userName);
-                }
-              }
-            });
-          }
-        }
-
-        setEvents(parsedEvents);
-
-        if (id) {
-          setScheduleId(id);
-          const storedData: ScheduleHistory = {
-            events: decodedEvents,
-            sharedAt: new Date().toISOString()
-          };
-          setJsonItem(`calendar-events-${id}`, storedData);
-          
-          if (title) {
-            const decodedTitle = decodeURIComponent(title);
-            setScheduleTitle(decodedTitle);
-            setDisplayTitle(decodedTitle);
-            setJsonItem(`calendar-schedule-title-${id}`, decodedTitle);
-          }
-        }
-
-        const uniqueApprovers = new Set<string>();
-        parsedEvents.forEach(event => {
-          if (event.createdBy) uniqueApprovers.add(event.createdBy);
-          if (event.approvedBy) {
-            event.approvedBy.forEach(approver => uniqueApprovers.add(approver));
-          }
-        });
-        setApprovers(Array.from(uniqueApprovers));
-
-        if (!userName) {
-          setShowNameModal(true);
-        }
-      } catch (error) {
-        console.error('Failed to parse events from URL:', error);
-        if (id) {
-          loadFromLocalStorage(id);
-        }
-      }
-    } else if (id) {
-      loadFromLocalStorage(id);
-    } else if (isCreator && isInitialMount.current) {
-      const newScheduleId = uuidv4();
-      setScheduleId(newScheduleId);
-      setShowTitleModal(true);
-      isInitialMount.current = false;
-    }
-  }, [userName, isCreator]);
 
   useEffect(() => {
     if (scheduleId) {
@@ -559,6 +483,19 @@ function App() {
       }
     }
   };
+
+  useCalendarInitializer({
+    userName,
+    isCreator,
+    loadFromLocalStorage,
+    setEvents,
+    setScheduleId,
+    setScheduleTitle,
+    setDisplayTitle,
+    setApprovers,
+    setShowNameModal,
+    setShowTitleModal,
+  });
 
   return (
       <div className="h-screen flex bg-white">

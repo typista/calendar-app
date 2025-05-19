@@ -33,6 +33,10 @@ export interface StoredEvent extends Omit<Event, 'start' | 'end'> {
   end: string;
   color: string;
   notes?: string;
+  createdBy?: string;
+  approvals?: Record<string, boolean>;
+  approvedBy?: string[];
+  [key: string]: any;
 }
 
 // 表示時間帯の型
