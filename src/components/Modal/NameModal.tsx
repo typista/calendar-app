@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react'
+import React, { useState, FormEvent, Dispatch, SetStateAction, KeyboardEvent } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { useShareEvents } from '../../utils/shareEvents';
 

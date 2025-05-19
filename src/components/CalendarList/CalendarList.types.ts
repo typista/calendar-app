@@ -1,4 +1,5 @@
-aimport { CalendarEvent } from '../../types/Calendar';
+import React, { FormEvent, Dispatch, SetStateAction } from 'react'
+import { CalendarEvent } from '../../types/Calendar';
 
 export interface CalendarListProps {
     events: CalendarEvent[];
@@ -7,7 +8,7 @@ export interface CalendarListProps {
     effectiveCreator: boolean;
     scheduleId: string;
     onClick: (boolean) => void;
-    setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
+    setEvents: Dispatch<SetStateAction<Event[]>>;
     showBottomSheet: boolean;
     copyButtonText: string;
     setEventData: (boolean:  date:  date) => EventData;

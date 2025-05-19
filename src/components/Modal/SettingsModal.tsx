@@ -1,4 +1,4 @@
-import React, { FormEvent } from 'react'
+import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { TimeRange } from '../../types/Calendar';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';

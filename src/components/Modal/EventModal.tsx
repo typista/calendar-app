@@ -1,4 +1,4 @@
-import React, { FormEvent } from 'react'
+import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { WEEK_DAYS, HOURS, COLORS } from '../../constants/calendar';
 import { EventData } from '../../types/Calendar';

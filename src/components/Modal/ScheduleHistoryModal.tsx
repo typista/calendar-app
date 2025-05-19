@@ -1,4 +1,4 @@
-import React, { FormEvent } from 'react'
+import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { ModalWrapper } from './ModalWrapper'
 import { ScheduleHistory } from '../../types/Calendar';

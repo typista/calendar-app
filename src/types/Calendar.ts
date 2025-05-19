@@ -1,3 +1,5 @@
+import React, { FormEvent, Dispatch, SetStateAction } from 'react'
+
 // イベントの型定義
 export interface CalendarEvent {
   id: string;             // イベント固有ID
@@ -66,11 +68,11 @@ export interface ScheduleHistory {
 
 export interface UseCalendarDataResult {
   events: Event[];
-  setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
+  setEvents: Dispatch<SetStateAction<Event[]>>;
   scheduleTitle: string;
-  setScheduleTitle: React.Dispatch<React.SetStateAction<string>>;
+  setScheduleTitle: Dispatch<SetStateAction<string>>;
   displayTitle: string;
-  setDisplayTitle: React.Dispatch<React.SetStateAction<string>>;
+  setDisplayTitle: Dispatch<SetStateAction<string>>;
   showAnsweredButton: boolean;
   effectiveCreator: boolean;
 }
