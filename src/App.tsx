@@ -601,6 +601,7 @@ function App() {
         setEventData={setEventData}
         setNewEventTitle={setNewEventTitle}
         setNewEventColor={setNewEventColor}
+        setNewEventNotes={setNewEventNotes}
         onClick={handleCreateEvent}
         onClose={handleEventModalClose}
         onKeyDown={handleKeyDown}

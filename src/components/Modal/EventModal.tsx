@@ -14,13 +14,14 @@ type EventModalProps = {
     setEventData: (boolean, date, date)=>EventData
     setNewEventTitle: (string)=>void
     setNewEventColor: (color)=>void
+    setNewEventNotes: (string)=>void
     onClick: Dispatch<SetStateAction<boolean>>
     onClose: Dispatch<SetStateAction<boolean>>
     onKeyDown: Dispatch<SetStateAction<boolean>>
   }
   
   export const EventModal: React.FC<EventModalProps> = ({
-    show, newEventTitle, newEventColor, newEventNotes, eventData, setEventData, setNewEventTitle, setNewEventColor, onClick, onClose, onKeyDown
+    show, newEventTitle, newEventColor, newEventNotes, eventData, setEventData, setNewEventTitle, setNewEventColor, setNewEventNotes, onClick, onClose, onKeyDown
   }) => (
     <ModalWrapper show={show} onClose={onClose}>
         <div 
