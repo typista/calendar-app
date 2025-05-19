@@ -1,28 +1,63 @@
 import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
 import { HeaderProps } from './Header.types';
 import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
+import { getJsonItem, setJsonItem, removeJsonItem } from './../../utils/storage';
 import { formatDate } from './../../utils/dateUtils';
+import { useShareEvents } from '../../utils/shareEvents';
 
 export const Header: React.FC<HeaderProps> = ({
   displayTitle,
+  userName,
   isCreator,
+  events,
+  scheduleTitle,
+  approvers,
   effectiveCreator,
   showCopiedToast,
   setShowTitleModal,
   setShowBottomSheet,
-  handleShareEvents,
   copyButtonText,
   setShowSettingsModal,
   currentDate,
   setCurrentDate,
-  hasValidSchedules,
-  hasAnsweredSchedules,
   handleScheduleHistoryClick,
   scheduleId,
   scheduleIds,
   handleAnsweredSchedulesClick,
   setEventData
 }) => {
+  useEffect(() => {
+    if (scheduleId && userName) {
+      const hasAnswers = getJsonItem(`calendar-approvals-${scheduleId}-${userName}`) !== null;
+      setHasAnsweredSchedules(hasAnswers);
+    } else {
+      setHasAnsweredSchedules(false);
+    }
+  }, [scheduleId, userName]);
+
+  useEffect(() => {
+    let hasValid = false;
+    for (const id of scheduleIds) {
+      const storedData = getJsonItem(`calendar-events-${id}`);
+      if (storedData) {
+        try {
+          const { sharedAt } = storedData as ScheduleHistory;
+          if (sharedAt && !isNaN(new Date(sharedAt).getTime())) {
+            hasValid = true;
+            break;
+          }
+        } catch (error) {
+          console.error('Failed to parse stored data:', error);
+        }
+      }
+    }
+    setHasValidSchedules(hasValid);
+  }, [scheduleIds]);
+
+  // 有効なスケジュールがあるかフラグ
+  const [hasValidSchedules, setHasValidSchedules] = useState(false);
+
+  const [hasAnsweredSchedules, setHasAnsweredSchedules] = useState(false);
   const handlePrevWeek = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() - 7);
@@ -37,6 +72,20 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleToday = () => {
     setCurrentDate(new Date());
+  };
+  const shareEvents = useShareEvents(
+    events,
+    userName,
+    scheduleId,
+    scheduleTitle,
+    approvers
+  );
+  const handleShareEvents = () => {
+    if (!userName) {
+      setShowNameModal(true);
+      return;
+    }
+    shareEvents();
   };
 
   return (

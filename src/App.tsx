@@ -44,13 +44,9 @@ function App() {
     return stored ? stored : [];
   });
 
-  // 有効なスケジュールがあるかフラグ
-  const [hasValidSchedules, setHasValidSchedules] = useState(false);
-
   // 各種モーダル表示フラグ
   const [showScheduleHistoryModal, setShowScheduleHistoryModal] = useState(false);
   const [showAnsweredModal, setShowAnsweredModal] = useState(false);
-  const [hasAnsweredSchedules, setHasAnsweredSchedules] = useState(false);
 
   // カレンダー表示の基準日
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -175,34 +171,6 @@ function App() {
     }
   }, [scheduleIds]);
 
-  useEffect(() => {
-    if (scheduleId && userName) {
-      const hasAnswers = getJsonItem(`calendar-approvals-${scheduleId}-${userName}`) !== null;
-      setHasAnsweredSchedules(hasAnswers);
-    } else {
-      setHasAnsweredSchedules(false);
-    }
-  }, [scheduleId, userName]);
-
-  useEffect(() => {
-    let hasValid = false;
-    for (const id of scheduleIds) {
-      const storedData = getJsonItem(`calendar-events-${id}`);
-      if (storedData) {
-        try {
-          const { sharedAt } = storedData as ScheduleHistory;
-          if (sharedAt && !isNaN(new Date(sharedAt).getTime())) {
-            hasValid = true;
-            break;
-          }
-        } catch (error) {
-          console.error('Failed to parse stored data:', error);
-        }
-      }
-    }
-    setHasValidSchedules(hasValid);
-  }, [scheduleIds]);
-
   const loadFromLocalStorage = (id: string) => {
     const storedData = getJsonItem(`calendar-events-${id}`);
     const storedTitle = getJsonItem(`calendar-schedule-title-${id}`);
@@ -292,81 +260,8 @@ function App() {
     }
   };
   
-  const handleShareEvents = () => {
-    if (!userName) {
-      setShowNameModal(true);
-      return;
-    }
-
-    shareEvents();
-  };
-
-  const shareEvents = async () => {
-    const filteredEvents = events.filter(event => {
-      if (event.createdBy === userName) return true;
-      if (!event.approvals) return false;
-      
-      const approvalCount = Object.values(event.approvals).filter(v => v).length;
-      const position = approvers.length + (approvers.includes(userName) ? 0 : 1);
-      
-      return approvalCount >= position - 1;
-    });
-
-    const storedEvents: StoredEvent[] = filteredEvents.map(event => ({
-      ...event,
-      start: event.start.toISOString(),
-      end: event.end.toISOString(),
-      approvedBy: [...(event.approvedBy || []), userName]
-    }));
-    
-    const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
-    const url = new URL(window.location.href);
-    url.searchParams.set('events', encodedEvents);
-    url.searchParams.set('id', scheduleId);
-    if (scheduleTitle) {
-      url.searchParams.set('title', encodeURIComponent(scheduleTitle));
-    }
-    
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      setCopyButtonText('コピーしました！');
-      setShowCopiedToast(true);
-      
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
-      }
-      
-      copyTimeoutRef.current = window.setTimeout(() => {
-        setCopyButtonText('共有リンクをコピー');
-        setShowCopiedToast(false);
-      }, 2000);
-
-      setJsonItem(`calendar-events-${scheduleId}`, {
-        events: storedEvents,
-        sharedAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Failed to copy URL:', error);
-      setCopyButtonText('コピーに失敗しました');
-      
-      if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
-      }
-      
-      copyTimeoutRef.current = window.setTimeout(() => {
-        setCopyButtonText('共有リンクをコピー');
-      }, 2000);
-    }
-  };
-
   const handleSettingsModalClose = () => {
     setShowSettingsModal(false);
-  };
-
-  const handleNameSubmit = () => {
-    if (!userName.trim()) return;
-    setShowNameModal(false);
-    shareEvents();
   };
 
   const handleNameModalClose = () => {
@@ -499,18 +394,19 @@ function App() {
 
           <Header
             displayTitle={displayTitle}
+            userName={userName}
             isCreator={isCreator}
+            events={events}
+            scheduleTitle={scheduleTitle}
+            approvers={approvers}
             effectiveCreator={effectiveCreator}
             showCopiedToast={showCopiedToast}
             setShowTitleModal={setShowTitleModal}
             setShowBottomSheet={setShowBottomSheet}
-            handleShareEvents={handleShareEvents}
             copyButtonText={copyButtonText}
             setShowSettingsModal={setShowSettingsModal}
             currentDate={currentDate}
             setCurrentDate={setCurrentDate}
-            hasValidSchedules={hasValidSchedules}
-            hasAnsweredSchedules={hasAnsweredSchedules}
             handleScheduleHistoryClick={handleScheduleHistoryClick}
             scheduleId={scheduleId}
             scheduleIds={scheduleIds}
@@ -561,8 +457,8 @@ function App() {
         show={showNameModal}
         userName={userName}
         setUserName={setUserName}
+        events={events}
         handleKeyDown={handleKeyDown}
-        onSubmit={handleNameSubmit}
         onClose={handleNameModalClose}
       />
       <TitleModal
