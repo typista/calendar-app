@@ -445,6 +445,9 @@ function App() {
         events={events}
         handleKeyDown={handleKeyDown}
         onClose={handleNameModalClose}
+        scheduleId={scheduleId}
+        scheduleTitle={scheduleTitle}
+        approvers={approvers}
       />
       <TitleModal
         show={showTitleModal}
