@@ -397,6 +397,7 @@ function App() {
           setShowBottomSheet={setShowBottomSheet}
           copyButtonText={copyButtonText}
           setShowSettingsModal={setShowSettingsModal}
+          setShowNameModal={setShowNameModal}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
           handleScheduleHistoryClick={handleScheduleHistoryClick}

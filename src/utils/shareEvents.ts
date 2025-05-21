@@ -7,7 +7,7 @@ export function useShareEvents(
   userName: string,
   scheduleId: string,
   scheduleTitle: string | null,
-  approvers: string[]
+  approvers: string[] = []
 ) {
   const copyTimeoutRef = useRef<number>();
   // トースト表示用

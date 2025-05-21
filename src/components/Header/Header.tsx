@@ -18,6 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   setShowBottomSheet,
   copyButtonText,
   setShowSettingsModal,
+  setShowNameModal,
   currentDate,
   setCurrentDate,
   handleScheduleHistoryClick,
