@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
 import { WEEK_DAYS, HOURS, COLORS } from './constants/calendar';
-import { CalendarEvent, EventPosition, EventData, StoredEvent, TimeRange, ApprovalResponse, ScheduleHistory } from './types/Calendar';
+import { CalendarEvent, EventPosition, EventData, StoredEvent, TimeRange, ApprovalResponse, ScheduleHistory } from './types';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
 import { getJsonItem, setJsonItem, removeJsonItem } from './utils/storage';
 import { useCalendarData } from './hooks/useCalendarData';

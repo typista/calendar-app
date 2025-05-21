@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { setJsonItem } from './storage';
-import type { StoredEvent } from '../types/Calendar';
+import type { StoredEvent } from '../types';
 
 export function useShareEvents(
   events: StoredEvent[],
