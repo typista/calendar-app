@@ -1,33 +1,38 @@
-import React, { useState, FormEvent, Dispatch, SetStateAction, KeyboardEvent } from 'react'
+import React, { FormEvent, KeyboardEvent } from 'react'
 import { ModalWrapper } from './ModalWrapper'
-import { useShareEvents } from '../../utils/shareEvents';
+import { useShareEvents } from '../../utils/shareEvents'
+import { StoredEvent } from '../../types'
 
 type NameModalProps = {
   show: boolean
   userName: string
   events: StoredEvent[]
   setUserName: (name: string) => void
-  handleKeyDown: (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void
-  onSubmit: (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void
-  onClose: Dispatch<SetStateAction<boolean>>
+  handleKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void
+  onClose: () => void
+  scheduleId: string
+  scheduleTitle: string | null
+  approvers: string[]
 }
 
 export const NameModal: React.FC<NameModalProps> = ({
-  show, userName, events, scheduleId, scheduleTitle, approvers, setUserName, handleKeyDown, onSubmit, onClose
+  show,
+  userName,
+  events,
+  setUserName,
+  handleKeyDown,
+  onClose,
+  scheduleId,
+  scheduleTitle,
+  approvers
 }) => {
-  const shareEvents = useShareEvents(
-    events,
-    userName,
-    scheduleId,
-    scheduleTitle,
-    approvers
-  );
-  const [showNameModal, setShowNameModal] = useState(false);
+  const shareEvents = useShareEvents(events, userName, scheduleId, scheduleTitle, approvers)
   const handleNameSubmit = () => {
-    if (!userName.trim()) return;
-    setShowNameModal(false);
-    shareEvents();
-  };
+    if (!userName.trim()) return
+    shareEvents()
+    onClose()
+  }
+
   return (
     <ModalWrapper show={show} onClose={onClose}>
       <form
@@ -43,7 +48,12 @@ export const NameModal: React.FC<NameModalProps> = ({
           className="w-full px-3 py-2 border rounded mb-4"
           value={userName}
           onChange={e => setUserName(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleNameSubmit()
+            }
+          }}
           autoFocus
         />
         <div className="flex justify-end gap-2">
