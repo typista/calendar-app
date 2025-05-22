@@ -390,7 +390,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       </div>
 
       <div ref={gridRef}
-        className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden" className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden min-h-0"
+        className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden min-h-0"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
