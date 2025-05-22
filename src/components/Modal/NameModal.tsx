@@ -1,4 +1,4 @@
-import React, { FormEvent, KeyboardEvent } from 'react'
+import React, { FormEvent, KeyboardEvent, useEffect } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { useShareEvents } from '../../utils/shareEvents'
 import { StoredEvent } from '../../types'
@@ -8,11 +8,10 @@ type NameModalProps = {
   userName: string
   events: StoredEvent[]
   setUserName: (name: string) => void
-  handleKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void
-  onClose: () => void
   scheduleId: string
   scheduleTitle: string | null
   approvers: string[]
+  onClose: () => void
 }
 
 export const NameModal: React.FC<NameModalProps> = ({
@@ -20,13 +19,26 @@ export const NameModal: React.FC<NameModalProps> = ({
   userName,
   events,
   setUserName,
-  handleKeyDown,
-  onClose,
   scheduleId,
   scheduleTitle,
-  approvers
+  approvers,
+  onClose
 }) => {
   const shareEvents = useShareEvents(events, userName, scheduleId, scheduleTitle, approvers)
+
+  // Close and discard input on ESC
+  useEffect(() => {
+    if (!show) return
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setUserName('')
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [show, onClose, setUserName])
+
   const handleNameSubmit = () => {
     if (!userName.trim()) return
     shareEvents()
@@ -34,7 +46,7 @@ export const NameModal: React.FC<NameModalProps> = ({
   }
 
   return (
-    <ModalWrapper show={show} onClose={onClose}>
+    <ModalWrapper show={show} onClose={() => { setUserName(''); onClose() }}>
       <form
         className="p-6"
         onSubmit={(e: FormEvent) => {
@@ -57,10 +69,18 @@ export const NameModal: React.FC<NameModalProps> = ({
           autoFocus
         />
         <div className="flex justify-end gap-2">
-          <button type="button" className="px-4 py-2" onClick={onClose}>
+          <button
+            type="button"
+            className="px-4 py-2"
+            onClick={() => { setUserName(''); onClose() }}
+          >
             キャンセル
           </button>
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded" disabled={!userName.trim()}>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+            disabled={!userName.trim()}
+          >
             OK
           </button>
         </div>
