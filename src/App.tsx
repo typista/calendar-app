@@ -396,6 +396,7 @@ function App() {
           setShowTitleModal={setShowTitleModal}
           setShowBottomSheet={setShowBottomSheet}
           copyButtonText={copyButtonText}
+          setShowCopiedToast={setShowCopiedToast}
           setShowSettingsModal={setShowSettingsModal}
           setShowNameModal={setShowNameModal}
           currentDate={currentDate}

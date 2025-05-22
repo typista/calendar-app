@@ -17,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   setShowTitleModal,
   setShowBottomSheet,
   copyButtonText,
+  setShowCopiedToast,
   setShowSettingsModal,
   setShowNameModal,
   currentDate,
@@ -81,11 +82,21 @@ export const Header: React.FC<HeaderProps> = ({
     scheduleTitle,
     approvers
   );
-  const handleShareEvents = () => {
+  const handleShareEvents = async () => {
     if (!userName) {
       setShowNameModal(true);
       return;
     }
+    setCopyButtonText('コピーしました！');
+    setShowCopiedToast(true);
+    if (copyTimeoutRef.current) {
+      window.clearTimeout(copyTimeoutRef.current);
+    }
+    
+    copyTimeoutRef.current = window.setTimeout(() => {
+      setCopyButtonText('共有リンクをコピー');
+      setShowCopiedToast(false);
+    }, 2000);
     shareEvents();
   };
 
