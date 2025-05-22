@@ -13,6 +13,8 @@ export const Header: React.FC<HeaderProps> = ({
   scheduleTitle,
   approvers,
   effectiveCreator,
+  copyTimeoutRef,
+  setCopyButtonText,
   showCopiedToast,
   setShowTitleModal,
   setShowBottomSheet,
