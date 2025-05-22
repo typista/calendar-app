@@ -17,7 +17,8 @@ export const CalendarList: React.FC<CalendarListProps> = ({
     setEventData,
     setNewEventTitle,
     setNewEventColor,
-    setNewEventNotes
+    setNewEventNotes,
+    setShowBottomSheet
   }) => {
     const handleApproval = (eventId: string, approved: boolean) => {
         setEvents(prevEvents => {
