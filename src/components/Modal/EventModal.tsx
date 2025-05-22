@@ -22,10 +22,17 @@ type EventModalProps = {
   
   export const EventModal: React.FC<EventModalProps> = ({
     show, newEventTitle, newEventColor, newEventNotes, eventData, setEventData, setNewEventTitle, setNewEventColor, setNewEventNotes, onClick, onClose, onKeyDown
-  }) => (
-    <ModalWrapper show={show} onClose={onClose}>
+  }) => {
+  const handleKeyDownWrapper = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (e.target instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      onClick();
+    }
+  };
+  return (<ModalWrapper show={show} onClose={onClose}>
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50" onKeyDown={handleKeyDownWrapper} tabIndex={0}
           onClick={() => setEventData({ ...eventModal, show: false })}
         >
           <div 
@@ -50,7 +57,6 @@ type EventModalProps = {
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
                 value={newEventTitle}
                 onChange={(e) => setNewEventTitle(e.target.value)}
-                onKeyDown={onKeyDown}
                 autoFocus
               />
               <div className="text-sm text-gray-600 mb-4">
@@ -85,7 +91,6 @@ type EventModalProps = {
                   rows={3}
                   value={newEventNotes}
                   onChange={(e) => setNewEventNotes(e.target.value)}
-                  onKeyDown={onKeyDown}
                 />
               </div>
               <div className="flex justify-end gap-3">
@@ -107,4 +112,5 @@ type EventModalProps = {
           </div>
         </div>
     </ModalWrapper>
-  )
+  );
+}
