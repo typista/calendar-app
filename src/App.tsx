@@ -421,6 +421,8 @@ function App() {
           setNewEventTitle={setNewEventTitle}
           setNewEventColor={setNewEventColor}
           setNewEventNotes={setNewEventNotes}
+          showBottomSheet={showBottomSheet}
+          setShowBottomSheet={setShowBottomSheet}
         />
       </div>
 
@@ -432,6 +434,11 @@ function App() {
         scheduleId={scheduleId}
         onClick={setShowBottomSheet}
         setEvents={setEvents}
+        setEventData={setEventData}
+        setNewEventTitle={setNewEventTitle}
+        setNewEventColor={setNewEventColor}
+        setNewEventNotes={setNewEventNotes}
+        setShowBottomSheet={setShowBottomSheet}
         showBottomSheet={showBottomSheet}
         copyButtonText={copyButtonText}
       />
