@@ -1,7 +1,7 @@
 // hooks/useCalendarData.ts
 import { useState, useRef, useEffect } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../utils/storage';
-import { StoredEvent, ApprovalInfo, ApprovalResponse, UseCalendarDataResult } from '../types/Calendar';
+import { StoredEvent, ApprovalInfo, ApprovalResponse, UseCalendarDataResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
