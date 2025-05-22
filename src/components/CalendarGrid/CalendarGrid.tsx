@@ -370,9 +370,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   };
 
   return (
-  <div>
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="grid grid-cols-8 border-b">
+  <div className="flex flex-col h-screen">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div className="sticky top-0 bg-white z-20 grid grid-cols-8 border-b">
         <div className="border-r" />
         {WEEK_DAYS.map((day, index) => {
           const dayInfo = getDayNumbers(currentDate)[index];
@@ -389,9 +389,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         })}
       </div>
 
-      <div 
-        ref={gridRef}
-        className="relative flex-1 grid grid-cols-8 overflow-y-scroll overflow-x-hidden"
+      <div ref={gridRef}
+        className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden" className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden min-h-0"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -399,7 +398,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="border-r">
+        <div className="border-r sticky left-0 bg-white z-10">
           {HOURS.map((hour) => (
             <div key={hour} className="h-12 text-right pr-2 text-sm text-gray-500">
               {hour}:00
