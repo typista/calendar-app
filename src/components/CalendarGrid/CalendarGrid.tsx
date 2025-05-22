@@ -37,9 +37,10 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     if (!gridRef.current) return null;
     
     const rect = gridRef.current.getBoundingClientRect();
+    const scrollOffset = gridRef.current.scrollTop;
     const timeColumnWidth = rect.width / 8;
     const x = e.clientX - rect.left - timeColumnWidth;
-    const y = e.clientY - rect.top;
+    const y = e.clientY - rect.top + scrollOffset;
     
     const dayIndex = Math.floor((x / (rect.width - timeColumnWidth)) * 7);
     const hourIndex = Math.floor(y / 48);
@@ -390,7 +391,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       </div>
 
       <div ref={gridRef}
-        className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden" className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden min-h-0"
+        className="relative flex-1 grid grid-cols-8 overflow-y-auto overflow-x-hidden min-h-0"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
