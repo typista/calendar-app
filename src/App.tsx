@@ -392,10 +392,12 @@ function App() {
           scheduleTitle={scheduleTitle}
           approvers={approvers}
           effectiveCreator={effectiveCreator}
+          copyTimeoutRef={copyTimeoutRef}
           showCopiedToast={showCopiedToast}
           setShowTitleModal={setShowTitleModal}
           setShowBottomSheet={setShowBottomSheet}
           copyButtonText={copyButtonText}
+          setCopyButtonText={setCopyButtonText}
           setShowCopiedToast={setShowCopiedToast}
           setShowSettingsModal={setShowSettingsModal}
           setShowNameModal={setShowNameModal}
