@@ -40,7 +40,7 @@ export const NameModal: React.FC<NameModalProps> = ({
   }, [show, onClose, setUserName])
 
   const handleNameSubmit = () => {
-    if (!userName.trim()) return
+    if (typeof userName !== 'string' || !userName?.trim()) return
     shareEvents()
     onClose()
   }
@@ -79,7 +79,7 @@ export const NameModal: React.FC<NameModalProps> = ({
           <button
             type="submit"
             className="px-4 py-2 bg-blue-500 text-white rounded"
-            disabled={!userName.trim()}
+            disabled={!(typeof userName === 'string' && userName.trim())}
           >
             OK
           </button>
