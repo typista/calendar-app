@@ -418,6 +418,7 @@ function App() {
           events={events}
           effectiveCreator={effectiveCreator}
           currentDate={currentDate}
+          setEvents={setEvents}
           setEventData={setEventData}
           setNewEventTitle={setNewEventTitle}
           setNewEventColor={setNewEventColor}

@@ -5,6 +5,7 @@ export interface CalendarGridProps {
   timeRange: TimeRange;
   currentTime: Date;
   events: CalendarEvent[];
+  setEvents: Dispatch<SetStateAction<Event[]>>;
   draggingEvent: () => { Event, number };
   effectiveCreator: boolean;
   currentDate: Date;

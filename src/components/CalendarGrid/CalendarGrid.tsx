@@ -12,6 +12,7 @@ export const CalendarGrid: React.FC<
   timeRange,
   currentTime,
   events,
+  setEvents,
   effectiveCreator,
   currentDate,
   setEventData,
