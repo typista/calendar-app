@@ -1,7 +1,7 @@
 import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { WEEK_DAYS, HOURS, COLORS } from '../../constants/calendar';
-import { EventData } from '../../types/Calendar';
+import { EventData } from '../../types/calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dateUtils';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 

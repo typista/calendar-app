@@ -28,7 +28,10 @@ export const CalendarList: React.FC<CalendarListProps> = ({
               const approvedBy = approved 
                 ? [...(event.approvedBy || []), userName].filter((v, i, a) => a.indexOf(v) === i)
                 : (event.approvedBy || []).filter(name => name !== userName);
-              return { ...event, approvals, approvedBy };
+              return { ...event, approvals: {
+                ...event.approvals,
+                [userName]: approved
+              }, approvedBy };
             }
             return event;
           });

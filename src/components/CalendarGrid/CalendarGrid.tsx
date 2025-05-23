@@ -2,9 +2,12 @@ import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEve
 import { WEEK_DAYS, HOURS, COLORS } from '../../constants/calendar';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dateUtils';
 import { CalendarGridProps } from './CalendarGrid.types';
-import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare, Check, X as XIcon } from 'lucide-react';
 
-export const CalendarGrid: React.FC<CalendarGridProps> = ({
+export const CalendarGrid: React.FC<
+  CalendarGridProps & { userName: string }
+> = ({
+  userName,
   gridRef,
   timeRange,
   currentTime,
@@ -268,6 +271,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     const weekStart = new Date(currentDate);
     weekStart.setHours(0, 0, 0, 0);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+    const approval = (event: Event) => event.approvals?.[userName];
     
     const eventsByDay = new Map<number, Event[]>();
     events.forEach(event => {
@@ -315,7 +320,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       return (
         <div
           key={event.id}
-          className={`absolute rounded-lg px-2 py-1 text-white text-sm ${effectiveCreator ? 'cursor-move' : ''} flex flex-col`}
+          className={`absolute rounded-lg px-2 py-1 text-white text-sm ${effectiveCreator ? 'cursor-move' : ''} flex flex-col${approval(event)===false ? ' opacity-30' : ''}`}
           style={{
             left,
             top: `${startHour * 48 + (startMinutes / 60) * 48}px`,
@@ -329,6 +334,12 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         >
           <div className="text-xs font-medium">
             {formatEventTime(event.start)} 〜 {formatEventTime(event.end)}
+            {approval(event)===true && (
+              <Check className="inline-block ml-1 w-4 h-4" />
+            )}
+            {approval(event)===false && (
+              <XIcon className="inline-block ml-1 w-4 h-4" />
+            )}
           </div>
           
           <div className="font-medium">{event.title}</div>

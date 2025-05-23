@@ -1,4 +1,4 @@
-import { CalendarEvent, TimeRange } from '../../types/Calendar';
+import { CalendarEvent, TimeRange } from '../../types/calendar';
 
 export interface CalendarGridProps {
   gridRef: () => HTMLDivElement;

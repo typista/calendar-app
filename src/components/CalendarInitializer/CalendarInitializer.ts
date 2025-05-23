@@ -10,7 +10,7 @@ import {
   getJsonItem,
   setJsonItem,
 } from '../../utils/storage';
-import { StoredEvent, ApprovalResponse, ScheduleHistory } from '../../types/Calendar';
+import { StoredEvent, ApprovalResponse, ScheduleHistory } from '../../types/calendar';
 
 interface Params {
   userName: string | null;

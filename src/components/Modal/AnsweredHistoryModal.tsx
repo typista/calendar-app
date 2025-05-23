@@ -1,7 +1,7 @@
 import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { ModalWrapper } from './ModalWrapper'
-import { StoredEvent } from '../../types/Calendar';
+import { StoredEvent } from '../../types/calendar';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 
 // スケジュール履歴用

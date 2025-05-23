@@ -1,5 +1,5 @@
 // calendarUtils.ts
-import { StoredEvent, ApprovalResponse, ScheduleHistory } from '../../types/Calendar';
+import { StoredEvent, ApprovalResponse, ScheduleHistory } from '../../types/calendar';
 
 /**
  * URLSearchParams からデコード→Date 変換まで行う

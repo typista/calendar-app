@@ -1,5 +1,5 @@
 import React, { FormEvent, Dispatch, SetStateAction } from 'react'
-import { CalendarEvent } from '../../types/Calendar';
+import { CalendarEvent } from '../../types/calendar';
 
 export interface CalendarListProps {
     events: CalendarEvent[];

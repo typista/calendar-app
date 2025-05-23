@@ -1,4 +1,4 @@
-import { EventData } from '../../types/Calendar';
+import { EventData } from '../../types/calendar';
 
 export interface HeaderProps {
   displayTitle: string;
