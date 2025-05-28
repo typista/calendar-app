@@ -33,7 +33,7 @@ type EventModalProps = {
   return (<ModalWrapper show={show} onClose={onClose}>
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-16 z-50" onKeyDown={handleKeyDownWrapper} tabIndex={0}
-          onClick={() => setEventData({ ...eventModal, show: false })}
+          onClick={() => setEventData({ ...eventData, show: false })}
         >
           <div 
             className="bg-white rounded-lg w-full max-w-md mx-4"
