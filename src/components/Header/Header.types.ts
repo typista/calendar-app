@@ -2,6 +2,7 @@ import { EventData } from '../../types/calendar';
 
 export interface HeaderProps {
   displayTitle: string;
+  userName: string;
   isCreator: boolean;
   effectiveCreator: boolean;
   showCopiedToast: boolean;
