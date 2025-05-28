@@ -1,8 +1,6 @@
-import React, { useState, useRef, useCallback, MouseEvent, KeyboardEvent, useEffect, TouchEvent } from 'react';
-import { WEEK_DAYS, HOURS, COLORS } from './constants/calendar';
-import { CalendarEvent, EventPosition, EventData, StoredEvent, TimeRange, ApprovalResponse, ScheduleHistory } from './types';
-import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from './utils/dateUtils';
-import { getJsonItem, setJsonItem, removeJsonItem } from './utils/storage';
+import { useState, useRef, useCallback, KeyboardEvent, useEffect } from 'react';
+import { CalendarEvent, EventData, StoredEvent, TimeRange, ScheduleHistory } from './types';
+import { getJsonItem, setJsonItem } from './utils/storage';
 import { useCalendarData } from './hooks/useCalendarData';
 import { Header } from './components/Header/Header';
 import { useCalendarInitializer } from './components/CalendarInitializer/CalendarInitializer';
@@ -14,7 +12,6 @@ import { ScheduleHistoryModal } from './components/Modal/ScheduleHistoryModal';
 import { AnsweredHistoryModal } from './components/Modal/AnsweredHistoryModal';
 import { SettingsModal } from './components/Modal/SettingsModal';
 import { EventModal } from './components/Modal/EventModal';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -95,7 +92,6 @@ function App() {
     setScheduleTitle,
     displayTitle,
     setDisplayTitle,
-    showAnsweredButton,
     effectiveCreator,
   } = useCalendarData(scheduleId, userName, isCreator);
 
@@ -103,9 +99,6 @@ function App() {
 
   // カレンダーグリッド参照
   const gridRef = useRef<HTMLDivElement>(null);
-
-  // 初回マウント判定
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
