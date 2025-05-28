@@ -25,8 +25,8 @@ function App() {
 
   // ユーザー名
   const [userName, setUserName] = useState(() => {
-    const stored = getJsonItem('calendar-user-name');
-    return stored || '';
+    const stored = getJsonItem('calendar-user-name') as string | null;
+    return stored ?? '';
   });
 
   // 作成者判定（URLに events パラメータが無い場合は作成者）
@@ -116,12 +116,11 @@ function App() {
         end: event.end.toISOString()
       }));
 
-      const existingData = getJsonItem(`calendar-events-${scheduleId}`);
-      const existingSchedule: ScheduleHistory | null = existingData;
+      const existingSchedule = getJsonItem<ScheduleHistory>(`calendar-events-${scheduleId}`);
 
       const scheduleData: ScheduleHistory = {
         events: storedEvents,
-        sharedAt: existingSchedule?.sharedAt
+        sharedAt: existingSchedule?.sharedAt ?? undefined
       };
 
       setJsonItem(`calendar-events-${scheduleId}`, scheduleData);
