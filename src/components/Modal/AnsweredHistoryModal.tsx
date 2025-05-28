@@ -1,14 +1,8 @@
 import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { ModalWrapper } from './ModalWrapper'
-import { StoredEvent } from '../../types/calendar';
+import { StoredEvent, ScheduleHistory } from '../../types';
 import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
-
-// スケジュール履歴用
-interface ScheduleHistory {
-    events: StoredEvent[];
-    sharedAt?: string;      // 共有日時
-}
 
 type AnsweredHistoryModalProps = {
     show: boolean

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../utils/storage';
 import { StoredEvent, ApprovalInfo, ApprovalResponse, UseCalendarDataResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { ScheduleHistory } from '../types';
 
 /**
  * カレンダーデータ読み込み & 回復用フック
@@ -25,9 +26,9 @@ export function useCalendarData(
 
   // localStorage から候補スロットとタイトルを読み込む
   const loadLocal = (id: string) => {
-    const data = getJsonItem(`calendar-events-${id}`);
+    const data = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
     if (data) {
-      const { events: storedEvents } = data as { events: StoredEvent[] };
+      const { events: storedEvents } = data;
       originalCount.current = storedEvents.length;
       setEvents(
         storedEvents.map(ev => ({
