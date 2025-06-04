@@ -156,16 +156,17 @@ function App() {
   }, [scheduleIds]);
 
   const loadFromLocalStorage = useCallback((id: string) => {
-    const storedData = getJsonItem(`calendar-events-${id}`);
-    const storedTitle = getJsonItem(`calendar-schedule-title-${id}`);
+    const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
+    const storedTitle = getJsonItem<string>(`calendar-schedule-title-${id}`);
     
     if (storedData) {
-      const { events: storedEvents }: ScheduleHistory = storedData;
-      setEvents(storedEvents.map(event => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end)
-      })));
+      const { events } = storedData;
+      const normalized = events.map(ev => ({
+        ...ev,
+        start: new Date(ev.start),
+        end:   new Date(ev.end)
+      }));
+      setEvents(normalized as StoredEvent[]);
     }
     
     if (storedTitle) {

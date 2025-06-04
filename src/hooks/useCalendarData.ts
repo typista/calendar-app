@@ -28,15 +28,14 @@ export function useCalendarData(
   const loadLocal = (id: string) => {
     const data = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
     if (data) {
-      const { events: storedEvents } = data;
-      originalCount.current = storedEvents.length;
-      setEvents(
-        storedEvents.map(ev => ({
-          ...ev,
-          start: new Date(ev.start),
-          end: new Date(ev.end),
-        }))
-      );
+      const { events } = data;
+      const normalized = events.map(ev => ({
+        ...ev,
+        start: new Date(ev.start),
+        end:   new Date(ev.end)
+      }));
+      setEvents(normalized as StoredEvent[]);
+      originalCount.current = events.length;
     }
     const title = getJsonItem(`calendar-schedule-title-${id}`);
     if (title) {
