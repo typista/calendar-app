@@ -2,7 +2,7 @@ import React from 'react';
 import { formatDate, formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dateUtils';
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { CalendarListProps } from './CalendarList.types';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus, User } from 'lucide-react';
 
 export const CalendarList: React.FC<CalendarListProps> = ({
     events,
@@ -129,6 +129,10 @@ export const CalendarList: React.FC<CalendarListProps> = ({
 
     return (
     <div>
+        <div className="h-16 px-4 border-b flex items-center justify-end">
+            <UserCircle2 className="w-8 h-8 text-gray-500 p-1 mr-1" />
+            <span className="text-sm font-medium text-gray-700">{userName}</span>
+        </div>
         <div className="hidden md:block w-80 border-l">
             <div className="h-16 px-4 border-b flex items-center justify-between">
             <h3 className="font-medium">予定一覧</h3>
