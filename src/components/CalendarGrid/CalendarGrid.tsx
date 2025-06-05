@@ -241,40 +241,57 @@ export const CalendarGrid: React.FC<
   };
   
   const handleMouseUp = () => {
+    // ① イベント移動中のマウスアップ（ドラッグしていたイベントをリセット）
     if (draggingEvent) {
       setDraggingEvent(null);
       return;
     }
-  
+
+    // ② ドラッグ中でなければ状態をリセットして終了
     if (!isDragging || !dragStart || !dragEnd) {
       setIsDragging(false);
       setDragStart(null);
       setDragEnd(null);
       return;
     }
-  
+
+    // ③ 週の開始日（その週の日曜日）を取得して基準とする
     const weekStart = new Date(currentDate);
     weekStart.setHours(0, 0, 0, 0);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  
+
+    // ④ dragStart / dragEnd の dayIndex, hourIndex, minutes を使い、
+    //    それぞれ startDate, endDate を得る
     const startDate = new Date(weekStart);
     startDate.setDate(weekStart.getDate() + dragStart.dayIndex);
     startDate.setHours(dragStart.hourIndex, dragStart.minutes, 0, 0);
-  
+
     const endDate = new Date(weekStart);
     endDate.setDate(weekStart.getDate() + dragEnd.dayIndex);
     endDate.setHours(dragEnd.hourIndex, dragEnd.minutes, 0, 0);
-  
+
+    // ⑤ startDate と endDate のうち、早い方を start、遅い方を end として扱う
     const start = new Date(Math.min(startDate.getTime(), endDate.getTime()));
     const end = new Date(Math.max(startDate.getTime(), endDate.getTime()));
-  
-    if (start.getTime() !== end.getTime()) {
-      setEventData({ show: true, start, end });
+
+    // ⑥ ここから修正：ドラッグなし（start === end）の場合は、
+    //    そこを起点に「１時間後」を end としてセットする
+    let finalStart = start;
+    let finalEnd = end;
+    if (start.getTime() === end.getTime()) {
+      // 同じ座標だった（＝クリックだけ）場合は start の１時間後を end にする
+      finalEnd = new Date(start.getTime() + 60 * 60 * 1000);
+    }
+
+    // ⑦ 最終的に start と end が異なるときだけモーダルを開く
+    if (finalStart.getTime() !== finalEnd.getTime()) {
+      setEventData({ show: true, start: finalStart, end: finalEnd });
       setNewEventTitle('');
       setNewEventColor('#4285f4');
       setNewEventNotes('');
     }
-  
+
+    // ⑧ フラグとドラッグ開始・終了座標をリセット
     setIsDragging(false);
     setDragStart(null);
     setDragEnd(null);
