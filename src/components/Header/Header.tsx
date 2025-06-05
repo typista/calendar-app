@@ -92,7 +92,12 @@ export const Header: React.FC<HeaderProps> = ({
     }
     try {
       const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${scheduleId}`);
-      const storedEvents: StoredEvent[] = storedData ? storedData.events : [];
+      const allEvents: StoredEvent[] = storedData ? storedData.events : [];
+      const storedEvents: StoredEvent[] = (effectiveCreator
+        ? allEvents
+        : allEvents.filter(ev => ev.approvals?.[userName])
+      );
+
       await copyScheduleLink(
         storedEvents,
         window.location.href,
