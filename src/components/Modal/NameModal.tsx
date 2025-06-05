@@ -1,4 +1,4 @@
-import React, { FormEvent, KeyboardEvent, useEffect } from 'react'
+import React, { FormEvent, KeyboardEvent, useEffect, useState } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { useShareEvents } from '../../utils/shareEvents'
 import { StoredEvent } from '../../types'
@@ -25,6 +25,7 @@ export const NameModal: React.FC<NameModalProps> = ({
   onClose
 }) => {
   const shareEvents = useShareEvents(events, userName, scheduleId, scheduleTitle, approvers)
+  const [isComposing, setIsComposing] = useState(false)
 
   // Close and discard input on ESC
   useEffect(() => {
@@ -35,8 +36,8 @@ export const NameModal: React.FC<NameModalProps> = ({
         onClose()
       }
     }
-    document.addEventListener('keydown', handleEsc)
-    return () => document.removeEventListener('keydown', handleEsc)
+    document.addEventListener('keydown', handleEsc as any)
+    return () => document.removeEventListener('keydown', handleEsc as any)
   }, [show, onClose, setUserName])
 
   const handleNameSubmit = () => {
@@ -61,11 +62,13 @@ export const NameModal: React.FC<NameModalProps> = ({
           value={userName}
           onChange={e => setUserName(e.target.value)}
           onKeyDown={e => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !isComposing) {
               e.preventDefault()
               handleNameSubmit()
             }
           }}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
           autoFocus
         />
         <div className="flex justify-end gap-2">

@@ -1,4 +1,4 @@
-import React, { FormEvent, Dispatch, SetStateAction } from 'react'
+import React, { FormEvent, Dispatch, SetStateAction, useState } from 'react'
 import { ModalWrapper } from './ModalWrapper'
 import { PenSquare } from 'lucide-react'
 
@@ -19,6 +19,8 @@ export const TitleModal: React.FC<TitleModalProps> = ({
   onSubmit,
   onClose
 }) => {
+  const [isComposing, setIsComposing] = useState(false)
+
   const handleSubmit = () => {
     if (!scheduleTitle.trim()) return
     setDisplayTitle(scheduleTitle)
@@ -50,11 +52,13 @@ export const TitleModal: React.FC<TitleModalProps> = ({
             setDisplayTitle(e.target.value)
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !isComposing) {
               e.preventDefault()
               handleSubmit()
             }
           }}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
           autoFocus
         />
         <div className="flex justify-end gap-2">
@@ -71,5 +75,5 @@ export const TitleModal: React.FC<TitleModalProps> = ({
         </div>
       </form>
     </ModalWrapper>
-)
+  )
 }
