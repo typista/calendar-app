@@ -247,7 +247,7 @@ export const CalendarGrid: React.FC<
       return;
     }
 
-    // ② ドラッグ中でなければ状態をリセットして終了
+    // ② ドラッグをしていない or ドラッグ座標が不完全ならリセットして終了
     if (!isDragging || !dragStart || !dragEnd) {
       setIsDragging(false);
       setDragStart(null);
@@ -255,13 +255,12 @@ export const CalendarGrid: React.FC<
       return;
     }
 
-    // ③ 週の開始日（その週の日曜日）を取得して基準とする
+    // ③ 週の開始日（日曜日 00:00）を算出
     const weekStart = new Date(currentDate);
     weekStart.setHours(0, 0, 0, 0);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
-    // ④ dragStart / dragEnd の dayIndex, hourIndex, minutes を使い、
-    //    それぞれ startDate, endDate を得る
+    // ④ dragStart / dragEnd の位置情報から、それぞれの日時を作成
     const startDate = new Date(weekStart);
     startDate.setDate(weekStart.getDate() + dragStart.dayIndex);
     startDate.setHours(dragStart.hourIndex, dragStart.minutes, 0, 0);
@@ -270,20 +269,28 @@ export const CalendarGrid: React.FC<
     endDate.setDate(weekStart.getDate() + dragEnd.dayIndex);
     endDate.setHours(dragEnd.hourIndex, dragEnd.minutes, 0, 0);
 
-    // ⑤ startDate と endDate のうち、早い方を start、遅い方を end として扱う
-    const start = new Date(Math.min(startDate.getTime(), endDate.getTime()));
-    const end = new Date(Math.max(startDate.getTime(), endDate.getTime()));
+    // ⑤ startDate と endDate のうち早い方を start、遅い方を end として扱う
+    const rawStart = new Date(Math.min(startDate.getTime(), endDate.getTime()));
+    const rawEnd   = new Date(Math.max(startDate.getTime(), endDate.getTime()));
 
-    // ⑥ ここから修正：ドラッグなし（start === end）の場合は、
-    //    そこを起点に「１時間後」を end としてセットする
-    let finalStart = start;
-    let finalEnd = end;
-    if (start.getTime() === end.getTime()) {
-      // 同じ座標だった（＝クリックだけ）場合は start の１時間後を end にする
-      finalEnd = new Date(start.getTime() + 60 * 60 * 1000);
+    // ⑥ 「クリックだけ」の場合（rawStart === rawEnd）は
+    //    時間部分を切り捨てて「h:00 ～ h+1:00」の１時間枠を作成
+    let finalStart = rawStart;
+    let finalEnd   = rawEnd;
+
+    if (rawStart.getTime() === rawEnd.getTime()) {
+      const h = rawStart.getHours(); // クリックした時刻の「時間部分」
+
+      // finalStart を「h:00」に
+      finalStart = new Date(rawStart);
+      finalStart.setHours(h, 0, 0, 0);
+
+      // finalEnd を「h+1:00」に
+      finalEnd = new Date(finalStart);
+      finalEnd.setHours(h + 1, 0, 0, 0);
     }
 
-    // ⑦ 最終的に start と end が異なるときだけモーダルを開く
+    // ⑦ 範囲がある（最終的 start と end が異なる）場合のみモーダルを開く
     if (finalStart.getTime() !== finalEnd.getTime()) {
       setEventData({ show: true, start: finalStart, end: finalEnd });
       setNewEventTitle('');
@@ -291,7 +298,7 @@ export const CalendarGrid: React.FC<
       setNewEventNotes('');
     }
 
-    // ⑧ フラグとドラッグ開始・終了座標をリセット
+    // ⑧ フラグとドラッグ開始・終了の座標をリセット
     setIsDragging(false);
     setDragStart(null);
     setDragEnd(null);
