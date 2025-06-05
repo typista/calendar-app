@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, KeyboardEvent, useEffect } from 'react';
 import { CalendarEvent, EventData, StoredEvent, TimeRange, ScheduleHistory } from './types';
 import { getJsonItem, setJsonItem } from './utils/storage';
+import { copyScheduleLink } from './utils/clipboard';
 import { useCalendarData } from './hooks/useCalendarData';
 import { Header } from './components/Header/Header';
 import { useCalendarInitializer } from './components/CalendarInitializer/CalendarInitializer';
@@ -221,35 +222,13 @@ function App() {
 
     if (storedData) {
       const { events: storedEvents }: ScheduleHistory = storedData;
-      const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
-      const url = new URL(window.location.href);
-      url.searchParams.set('events', encodedEvents);
-      url.searchParams.set('id', id);
-      if (storedTitle) {
-        url.searchParams.set('title', encodeURIComponent(storedTitle));
-      }
-
       try {
-        // TEXT形式: URL
-        const text = url.toString();
-        // HTML形式: 箇条書きリストとリンク
-        const listItems = storedEvents.map(ev => {
-          const start = new Date(ev.start);
-          const end = new Date(ev.end);
-          const dateStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')} `;
-          const timeStr = `${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')} ～ ${String(end.getHours()).padStart(2,'0')}:${String(end.getMinutes()).padStart(2,'0')}`;
-          return `<li>${dateStr}${timeStr}</li>`;
-        }).join('');
-        const html = `<ul>${listItems}</ul><p><a href="${text}">このスケジュールに回答する</a></p>`;
-
-        // Write both formats to clipboard
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/plain': new Blob([text], { type: 'text/plain' }),
-            'text/html': new Blob([html], { type: 'text/html' })
-          })
-        ]);
-
+        await copyScheduleLink(
+          storedEvents,
+          window.location.href,
+          id,
+          storedTitle || ''
+        );
         setCopyButtonText('コピーしました！');
         setShowCopiedToast(true);
 

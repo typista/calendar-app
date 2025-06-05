@@ -2,6 +2,7 @@ import React, { useState, useRef, MouseEvent, KeyboardEvent, useEffect, TouchEve
 import { HeaderProps } from './Header.types';
 import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
+import { copyScheduleLink } from '../../utils/clipboard';
 import { formatDate } from '../../utils/dateUtils';
 import { useShareEvents } from '../../utils/shareEvents';
 
@@ -89,17 +90,27 @@ export const Header: React.FC<HeaderProps> = ({
       setShowNameModal(true);
       return;
     }
-    setCopyButtonText('コピーしました！');
-    setShowCopiedToast(true);
-    if (copyTimeoutRef.current) {
-      window.clearTimeout(copyTimeoutRef.current);
+    try {
+      const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${scheduleId}`);
+      const storedEvents: StoredEvent[] = storedData ? storedData.events : [];
+      await copyScheduleLink(
+        storedEvents,
+        window.location.href,
+        scheduleId,
+        scheduleTitle || ''
+      );
+      setCopyButtonText('コピーしました！');
+      setShowCopiedToast(true);
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = window.setTimeout(() => {
+        setCopyButtonText('共有リンクをコピー');
+        setShowCopiedToast(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
     }
-    
-    copyTimeoutRef.current = window.setTimeout(() => {
-      setCopyButtonText('共有リンクをコピー');
-      setShowCopiedToast(false);
-    }, 2000);
-    shareEvents();
   };
 
   return (
