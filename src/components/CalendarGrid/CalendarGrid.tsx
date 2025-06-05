@@ -18,7 +18,8 @@ export const CalendarGrid: React.FC<
   setEventData,
   setNewEventTitle,
   setNewEventColor,
-  setNewEventNotes
+  setNewEventNotes,
+  setShowBottomSheet
 }) => {
   // ドラッグ選択関連の状態
   const [isDragging, setIsDragging] = useState(false);
@@ -86,6 +87,17 @@ export const CalendarGrid: React.FC<
     });
 
     return positions;
+  };
+
+  const handleEventDoubleClick = (e: MouseEvent, event: CalendarEvent) => {
+    if (!effectiveCreator) return;
+    
+    e.stopPropagation();
+    setEventData({ show: true, start: event.start, end: event.end, event });
+    setNewEventTitle(event.title);
+    setNewEventColor(event.color);
+    setNewEventNotes(event.notes || '');
+    setShowBottomSheet(false);
   };
 
   const handleMouseDown = (e: MouseEvent) => {
