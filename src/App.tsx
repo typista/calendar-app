@@ -216,9 +216,9 @@ function App() {
   };
 
   const handleCopyHistoryUrl = async (id: string) => {
-    const storedData = getJsonItem(`calendar-events-${id}`);
-    const storedTitle = getJsonItem(`calendar-schedule-title-${id}`);
-    
+    const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
+    const storedTitle = getJsonItem<string>(`calendar-schedule-title-${id}`);
+
     if (storedData) {
       const { events: storedEvents }: ScheduleHistory = storedData;
       const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
@@ -228,16 +228,35 @@ function App() {
       if (storedTitle) {
         url.searchParams.set('title', encodeURIComponent(storedTitle));
       }
-      
+
       try {
-        await navigator.clipboard.writeText(url.toString());
+        // TEXT形式: URL
+        const text = url.toString();
+        // HTML形式: 箇条書きリストとリンク
+        const listItems = storedEvents.map(ev => {
+          const start = new Date(ev.start);
+          const end = new Date(ev.end);
+          const dateStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')} `;
+          const timeStr = `${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')} ～ ${String(end.getHours()).padStart(2,'0')}:${String(end.getMinutes()).padStart(2,'0')}`;
+          return `<li>${dateStr}${timeStr}</li>`;
+        }).join('');
+        const html = `<ul>${listItems}</ul><p><a href="${text}">このスケジュールに回答する</a></p>`;
+
+        // Write both formats to clipboard
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+            'text/html': new Blob([html], { type: 'text/html' })
+          })
+        ]);
+
         setCopyButtonText('コピーしました！');
         setShowCopiedToast(true);
-        
+
         if (copyTimeoutRef.current) {
           window.clearTimeout(copyTimeoutRef.current);
         }
-        
+
         copyTimeoutRef.current = window.setTimeout(() => {
           setCopyButtonText('共有リンクをコピー');
           setShowCopiedToast(false);
