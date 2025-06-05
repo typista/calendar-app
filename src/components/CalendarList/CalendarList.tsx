@@ -129,11 +129,11 @@ export const CalendarList: React.FC<CalendarListProps> = ({
 
     return (
     <div>
-        <div className="h-16 px-4 border-b flex items-center justify-end">
+        <div className="h-16 px-4 border-b flex items-center justify-start">
             <UserCircle2 className="w-8 h-8 text-gray-500 p-1 mr-1" />
             <span className="text-sm font-medium text-gray-700">{userName}</span>
         </div>
-        <div className="hidden md:block w-80 border-l">
+        <div className="hidden md:block w-60 border-l">
             <div className="h-16 px-4 border-b flex items-center justify-between">
             <h3 className="font-medium">予定一覧</h3>
             <div className="flex items-center gap-2">
