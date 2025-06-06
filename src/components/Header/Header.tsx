@@ -219,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({
                 作成済みの候補日程
               </button>
             )}
-            {!scheduleIds.includes(scheduleId) && hasAnsweredSchedules && (
+            {hasAnsweredSchedules && (
               <button
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
                 onClick={handleAnsweredSchedulesClick}

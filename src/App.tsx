@@ -305,14 +305,28 @@ function App() {
     }
   };
 
-  // ───────────── 追加：回答済みスケジュール ID の配列を用意 ─────────────
-  // 「calendar-approvals-${id}-${userName}」が localStorage にあるものだけを抽出
+  // --- 2. “作成済み” と “回答済み” の ID リストをそれぞれ計算 ------------
+  // “作成済み”：localStorage の calendar-events-<id> に含まれる events の中で
+  //             createdBy === userName のイベントがひとつでもあれば所有者とみなす
+  const createdScheduleIds = scheduleIds.filter((id) => {
+    const storedData = getJsonItem<{ events: any[] }>(`calendar-events-${id}`);
+    if (!storedData) return false;
+    try {
+      // スケジュール内のイベントリストを取得
+      const { events: storedEvents } = storedData;
+      // ひとつでも createdBy が userName のものがあれば「所有者」
+      return storedEvents.some((ev) => ev.createdBy === userName);
+    } catch {
+      return false;
+    }
+  });
+
+  // “回答済み” ：localStorage に calendar-approvals-<id>-<userName> があれば含める
   const answeredScheduleIds = scheduleIds.filter((id) => {
     if (!userName) return false;
-    const approvals = getJsonItem<{ [eventId: string]: boolean }>(
+    const approvals = getJsonItem<{ [ev: string]: boolean }>(
       `calendar-approvals-${id}-${userName}`
     );
-    // 「null ではない」＝回答データが残っているスケジュール
     return approvals !== null;
   });
 
@@ -422,7 +436,7 @@ function App() {
       />
       <ScheduleHistoryModal
         show={showScheduleHistoryModal}
-        scheduleIds={scheduleIds}
+        scheduleIds={createdScheduleIds}
         handleOpenExternalTab={handleOpenExternalTab}
         onClick={setShowScheduleHistoryModal}
         onClose={handleScheduleHistoryClose}
