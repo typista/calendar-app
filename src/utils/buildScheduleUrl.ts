@@ -21,13 +21,14 @@ export function buildScheduleUrl(
   baseUrl: string,
   scheduleId: string,
   storedEvents: StoredEvent[],
-  title: string
+  scheduleTitle: string
 ): string {
   // 1) storedEvents を JSON→URIエンコード→Base64 化してクエリにセット
   const encodedEvents = btoa(encodeURIComponent(JSON.stringify(storedEvents)));
   const url = new URL(baseUrl);
   url.searchParams.set('events', encodedEvents);
   url.searchParams.set('id', scheduleId);
+  url.searchParams.set('title', encodeURIComponent(scheduleTitle));
 
   // 2) approvedBy 配列から「回答者」一覧を一意化して responders クエリにセット
   const respondersSet = new Set<string>();

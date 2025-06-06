@@ -21,7 +21,7 @@ export async function copyScheduleLink(
   scheduleId: string,
   scheduleTitle?: string
 ) {
-  const text = buildScheduleUrl(baseUrl, scheduleId, storedEvents);
+  const text = buildScheduleUrl(baseUrl, scheduleId, storedEvents, scheduleTitle);
   
   // 3) HTML 形式のコピー用文字列を組み立て
   const listItems = storedEvents
