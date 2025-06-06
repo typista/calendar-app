@@ -35,38 +35,63 @@ type ScheduleHistoryModalProps = {
               </button>
               </div>
               <div className="max-h-[60vh] overflow-y-auto divide-y">
-              {scheduleIds.map(id => {
-                  const storedData = getJsonItem(`calendar-events-${id}`);
-                  if (!storedData) return null;
-  
-                  try {
-                  const { sharedAt } = storedData as ScheduleHistory;
-                  const title = getJsonItem(`calendar-schedule-title-${id}`) || '無題の候補日程';
-                  const date = new Date(sharedAt);
-                  
-                  // Skip invalid dates
-                  if (isNaN(date.getTime())) return null;
-  
-                  return (
-                      <div key={id} className="py-4 flex items-center justify-between">
-                      <div>
-                          <div className="font-medium">{title}</div>
-                          <div className="text-sm text-gray-600">
-                          {date.toLocaleString('ja-JP')}
-                          </div>
-                      </div>
-                      <button
-                          className="p-2 hover:bg-gray-100 rounded-full"
-                          onClick={() => handleOpenExternalTab(id)}
-                      >
-                          <ExternalLink className="w-5 h-5 text-gray-600" />
-                      </button>
-                      </div>
-                  );
-                  } catch (error) {
-                  return null; // Skip any entries that fail to parse
-                  }
-              })}
+                {/*
+                まず、scheduleIds を sharedAt（文字列→Date）を基準に降順ソートしてから表示します。
+                mutate を避けるために slice() を用いてコピーを作成しています。
+                */}
+                {scheduleIds
+                .slice() // 元配列を破壊せずにコピー
+                .sort((idA, idB) => {
+                    // sharedAt を取り出し、Date 化したうえで差分を返す
+                    const storedA = getJsonItem(`calendar-events-${idA}`);
+                    const storedB = getJsonItem(`calendar-events-${idB}`);
+                    // sharedAt が存在しない・不正な場合は 0 とみなす
+                    const dateA = storedA
+                    ? new Date((storedA as ScheduleHistory).sharedAt).getTime()
+                    : 0;
+                    const dateB = storedB
+                    ? new Date((storedB as ScheduleHistory).sharedAt).getTime()
+                    : 0;
+                    // 降順：dateB - dateA
+                    return dateB - dateA;
+                })
+                .map(id => {
+                    const storedData = getJsonItem(`calendar-events-${id}`);
+                    if (!storedData) return null;
+
+                    try {
+                    const { sharedAt } = storedData as ScheduleHistory;
+                    const title =
+                        getJsonItem(`calendar-schedule-title-${id}`) ||
+                        '無題の候補日程';
+                    const date = new Date(sharedAt);
+
+                    // 無効な日付はスキップ
+                    if (isNaN(date.getTime())) return null;
+
+                    return (
+                        <div
+                        key={id}
+                        className="py-4 flex items-center justify-between"
+                        >
+                        <div>
+                            <div className="font-medium">{title}</div>
+                            <div className="text-sm text-gray-600">
+                            {date.toLocaleString('ja-JP')}
+                            </div>
+                        </div>
+                        <button
+                            className="p-2 hover:bg-gray-100 rounded-full"
+                            onClick={() => handleOpenExternalTab(id)}
+                        >
+                            <ExternalLink className="w-5 h-5 text-gray-600" />
+                        </button>
+                        </div>
+                    );
+                    } catch {
+                    return null;
+                    }
+                })}
               </div>
           </div>
           </div>
