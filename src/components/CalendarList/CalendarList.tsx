@@ -186,7 +186,7 @@ export const CalendarList: React.FC<CalendarListProps> = ({
 
       {/* PC（md 以上）用サイドバー */}
       <div className="hidden md:block w-60 border-l">
-        <div className="h-16 px-4 border-b flex flex-col">
+        <div className="h-16 px-4 border-b flex flex-col justify-center">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">予定一覧</h3>
             <div className="flex items-center gap-2">
