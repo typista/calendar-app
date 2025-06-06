@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, KeyboardEvent, useEffect } from 'react';
 import { CalendarEvent, EventData, StoredEvent, TimeRange, ScheduleHistory } from './types';
 import { getJsonItem, setJsonItem } from './utils/storage';
 import { copyScheduleLink } from './utils/clipboard';
+import { buildScheduleUrl } from './utils/buildScheduleUrl';
 import { useCalendarData } from './hooks/useCalendarData';
 import { Header } from './components/Header/Header';
 import { useCalendarInitializer } from './components/CalendarInitializer/CalendarInitializer';
@@ -216,6 +217,22 @@ function App() {
     setShowAnsweredModal(false);
   };
 
+  const handleOpenExternalTab = async (id: string) => {
+    const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
+    const storedTitle = getJsonItem<string>(`calendar-schedule-title-${id}`);
+
+    if (storedData) {
+      const { events: storedEvents }: ScheduleHistory = storedData;
+      const url = buildScheduleUrl(
+        window.location.href,
+        id,
+        storedEvents,
+        storedTitle || ''
+      );
+      window.open(url, '_blank');
+    }
+  };
+
   const handleCopyHistoryUrl = async (id: string) => {
     const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
     const storedTitle = getJsonItem<string>(`calendar-schedule-title-${id}`);
@@ -394,14 +411,14 @@ function App() {
       <ScheduleHistoryModal
         show={showScheduleHistoryModal}
         scheduleIds={scheduleIds}
-        handleCopyHistoryUrl={handleCopyHistoryUrl}
+        handleOpenExternalTab={handleOpenExternalTab}
         onClick={setShowScheduleHistoryModal}
         onClose={handleScheduleHistoryClose}
       />
       <AnsweredHistoryModal
         show={showAnsweredModal}
         scheduleId={scheduleId}
-        handleCopyHistoryUrl={handleCopyHistoryUrl}
+        handleOpenExternalTab={handleOpenExternalTab}
         onClick={setShowAnsweredModal}
         onClose={handleAnsweredSchedulesClose}
       />

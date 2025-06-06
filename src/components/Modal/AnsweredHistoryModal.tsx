@@ -2,18 +2,18 @@ import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { ModalWrapper } from './ModalWrapper'
 import { StoredEvent, ScheduleHistory } from '../../types';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus, ExternalLink } from 'lucide-react';
 
 type AnsweredHistoryModalProps = {
     show: boolean
     scheduleId: string
-    handleCopyHistoryUrl: () => void
+    handleOpenExternalTab: () => void
     onClick: Dispatch<SetStateAction<boolean>>
     onClose: Dispatch<SetStateAction<boolean>>
   }
   
   export const AnsweredHistoryModal: React.FC<AnsweredHistoryModalProps> = ({
-    show, scheduleId, handleCopyHistoryUrl, onClick, onClose
+    show, scheduleId, handleOpenExternalTab, onClick, onClose
   }) => (
     <ModalWrapper show={show} onClose={onClose}>
     <div 
@@ -53,9 +53,9 @@ type AnsweredHistoryModalProps = {
                     </div>
                     <button
                     className="p-2 hover:bg-gray-100 rounded-full"
-                    onClick={() => handleCopyHistoryUrl(scheduleId)}
+                    onClick={() => handleOpenExternalTab(scheduleId)}
                     >
-                    <Copy className="w-5 h-5 text-gray-600" />
+                    <ExternalLink className="w-5 h-5 text-gray-600" />
                     </button>
                 </div>
                 );

@@ -2,18 +2,18 @@ import React, { FormEvent, Dispatch, SetStateAction } from 'react'
 import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
 import { ModalWrapper } from './ModalWrapper'
 import { ScheduleHistory } from '../../types/calendar';
-import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Settings, X, Copy, List, Calendar, Clock, Check, X as XIcon, UserCircle2, PenSquare, Plus, Minus, ExternalLink } from 'lucide-react';
 
 type ScheduleHistoryModalProps = {
     show: boolean
     scheduleIds: []
-    handleCopyHistoryUrl: () => void
+    handleOpenExternalTab: () => void
     onClick: Dispatch<SetStateAction<boolean>>
     onClose: Dispatch<SetStateAction<boolean>>
   }
   
   export const ScheduleHistoryModal: React.FC<ScheduleHistoryModalProps> = ({
-    show, scheduleIds, handleCopyHistoryUrl, onClick, onClose
+    show, scheduleIds, handleOpenExternalTab, onClick, onClose
   }) => (
     <ModalWrapper show={show} onClose={onClose}>
       <div 
@@ -57,9 +57,9 @@ type ScheduleHistoryModalProps = {
                       </div>
                       <button
                           className="p-2 hover:bg-gray-100 rounded-full"
-                          onClick={() => handleCopyHistoryUrl(id)}
+                          onClick={() => handleOpenExternalTab(id)}
                       >
-                          <Copy className="w-5 h-5 text-gray-600" />
+                          <ExternalLink className="w-5 h-5 text-gray-600" />
                       </button>
                       </div>
                   );
