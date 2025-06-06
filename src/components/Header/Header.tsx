@@ -28,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   handleScheduleHistoryClick,
   scheduleId,
   scheduleIds,
+  setScheduleIds,
   handleAnsweredSchedulesClick,
   setEventData
 }) => {
@@ -96,6 +97,16 @@ export const Header: React.FC<HeaderProps> = ({
         scheduleId,
         scheduleTitle || ''
       );
+      // ─── 非オーナー（回答者）がリンクをコピーしたタイミングで scheduleIds に追加 ───
+      if (!effectiveCreator) {
+        // まだ含まれていなければ push
+        if (!scheduleIds.includes(scheduleId)) {
+          const nextIds = [...scheduleIds, scheduleId];
+          setScheduleIds(nextIds);
+          // localStorage にも同期
+          setJsonItem('calendar-schedule-ids', nextIds);
+        }
+      }
       setCopyButtonText('コピーしました！');
       setShowCopiedToast(true);
       if (copyTimeoutRef.current) {

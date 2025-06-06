@@ -305,6 +305,17 @@ function App() {
     }
   };
 
+  // ───────────── 追加：回答済みスケジュール ID の配列を用意 ─────────────
+  // 「calendar-approvals-${id}-${userName}」が localStorage にあるものだけを抽出
+  const answeredScheduleIds = scheduleIds.filter((id) => {
+    if (!userName) return false;
+    const approvals = getJsonItem<{ [eventId: string]: boolean }>(
+      `calendar-approvals-${id}-${userName}`
+    );
+    // 「null ではない」＝回答データが残っているスケジュール
+    return approvals !== null;
+  });
+
   useCalendarInitializer({
     userName,
     isCreator,
@@ -344,6 +355,7 @@ function App() {
           handleScheduleHistoryClick={handleScheduleHistoryClick}
           scheduleId={scheduleId}
           scheduleIds={scheduleIds}
+          setScheduleIds={setScheduleIds}
           handleAnsweredSchedulesClick={handleAnsweredSchedulesClick}
           setEventData={setEventData}
         />
@@ -417,7 +429,7 @@ function App() {
       />
       <AnsweredHistoryModal
         show={showAnsweredModal}
-        scheduleId={scheduleId}
+        scheduleIds={answeredScheduleIds}
         handleOpenExternalTab={handleOpenExternalTab}
         onClick={setShowAnsweredModal}
         onClose={handleAnsweredSchedulesClose}
