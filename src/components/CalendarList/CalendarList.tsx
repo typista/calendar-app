@@ -163,13 +163,6 @@ export const CalendarList: React.FC<CalendarListProps> = ({
           </div>
         )}
 
-        {/* ─────────── URL パラメータに含まれる回答者名を表示 ─────────── */}
-        {respondersList.length > 0 && (
-          <div className="mt-2 text-xs text-gray-500">
-            回答者: {respondersList.join(', ')}
-          </div>
-        )}
-
         {/* ─────────── オーナー向け：ゴミ箱アイコン ─────────── */}
         {effectiveCreator && (
           <button
@@ -214,7 +207,7 @@ export const CalendarList: React.FC<CalendarListProps> = ({
               </button>
             </div>
           </div>
-          {/* URL クエリに含まれる回答者を常に表示 */}
+          {/* URL クエリに含まれる回答者を常に表示 TODO: オーナーのみに変更する */}
           {respondersList.length > 0 && (
             <div className="mt-2 text-xs text-gray-500">
               回答者: {respondersList.join(', ')}
