@@ -170,6 +170,20 @@ function App() {
     }
   }, [userName, displayTitle, scheduleId, scheduleIds]);
 
+  // 初期マウント時：すでにオーナー登録が localStorage にあれば scheduleIds に追加
+  useEffect(() => {
+   if (userName && displayTitle) {
+     const owner = getJsonItem<string>(`calendar-schedule-owner-${scheduleId}`);
+     if (owner === userName && !scheduleIds.includes(scheduleId)) {
+       setScheduleIds(prev => {
+         const next = [...prev, scheduleId];
+         setJsonItem('calendar-schedule-ids', next);
+         return next;
+       });
+     }
+   }
+ }, []); // マウント一度きりで OK
+
   const loadFromLocalStorage = useCallback((id: string) => {
     const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
     const storedTitle = getJsonItem<string>(`calendar-schedule-title-${id}`);
@@ -209,6 +223,13 @@ function App() {
     setJsonItem('calendar-schedule-ids', updatedIds);
     setJsonItem(`calendar-schedule-owner-${scheduleId}`, userName);
     setJsonItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
+    setJsonItem(
+      `calendar-events-${scheduleId}`,
+      {
+        events: [], 
+        sharedAt: new Date().toISOString()
+      }
+    );
   };
 
   const handleTitleModalClose = () => {
@@ -322,18 +343,9 @@ function App() {
   // --- 2. “作成済み” と “回答済み” の ID リストをそれぞれ計算 ------------
   // “作成済み”：localStorage の calendar-events-<id> に含まれる events の中で
   //             createdBy === userName のイベントがひとつでもあれば所有者とみなす
-  const createdScheduleIds = scheduleIds.filter((id) => {
-    const storedData = getJsonItem<{ events: any[] }>(`calendar-events-${id}`);
-    if (!storedData) return false;
-    try {
-      // スケジュール内のイベントリストを取得
-      const { events: storedEvents } = storedData;
-      // ひとつでも createdBy が userName のものがあれば「所有者」
-      return storedEvents.some((ev) => ev.createdBy === userName);
-    } catch {
-      return false;
-    }
-  });
+  const createdScheduleIds = scheduleIds.filter((id) =>
+    getJsonItem<string>(`calendar-schedule-owner-${id}`) === userName
+  );
 
   // “回答済み” ：localStorage に calendar-approvals-<id>-<userName> があれば含める
   const answeredScheduleIds = scheduleIds.filter((id) => {
