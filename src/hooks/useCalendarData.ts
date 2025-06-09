@@ -51,36 +51,37 @@ export function useCalendarData(
     const titleParam = params.get('title');
     const respParam = params.get('responseId');
 
-    // 候補スロットは
-    // - 作成者なら URL パラメータを優先
-    // - 回答者（effectiveCreator含む）なら常に localStorage から
     if (eventsParam) {
-      try {
-        const decoded = JSON.parse(decodeURIComponent(atob(eventsParam))) as StoredEvent[];
-        originalCount.current = decoded.length;
-        const parsed = decoded.map(ev => ({
-          ...ev,
-          start: new Date(ev.start),
-          end: new Date(ev.end),
-        }));
-        setEvents(parsed);
-        // 作成者のみ localStorage に保存
-        if (isCreator) {
+      if (isCreator) {
+        // 作成者は URL の events を表示・保存
+        try {
+          const decoded = JSON.parse(decodeURIComponent(atob(eventsParam))) as StoredEvent[];
+          originalCount.current = decoded.length;
+          const parsed = decoded.map(ev => ({
+            ...ev,
+            start: new Date(ev.start),
+            end:   new Date(ev.end),
+          }));
+          setEvents(parsed);
           setJsonItem(
             `calendar-events-${id}`,
             { events: decoded, sharedAt: new Date().toISOString() }
           );
+          if (titleParam) {
+            const t = decodeURIComponent(titleParam);
+            setScheduleTitle(t);
+            setDisplayTitle(t);
+            setJsonItem(`calendar-schedule-title-${id}`, t);
+          }
+        } catch {
+          loadLocal(id);
         }
-        if (titleParam) {
-          const t = decodeURIComponent(titleParam);
-          setScheduleTitle(t);
-          setDisplayTitle(t);
-          if (isCreator) setJsonItem(`calendar-schedule-title-${id}`, t);
-        }
-      } catch {
+      } else {
+        // 回答者は常にローカルストレージの「全枠」を読み込み
         loadLocal(id);
       }
     } else if (id) {
+      // URL に events がなくても、IDありならローカルから
       loadLocal(id);
     }
 
