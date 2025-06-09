@@ -106,6 +106,8 @@ export const Header: React.FC<HeaderProps> = ({
           // localStorage にも同期
           setJsonItem('calendar-schedule-ids', nextIds);
         }
+        // コピー後すぐに「回答済みの候補日程」ボタンを表示させる
+        setHasAnsweredSchedules(true);
       }
       setCopyButtonText('コピーしました！');
       setShowCopiedToast(true);
