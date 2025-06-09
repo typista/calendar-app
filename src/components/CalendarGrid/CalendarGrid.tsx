@@ -274,12 +274,13 @@ export const CalendarGrid: React.FC<
       setNewEventTitle('');
       setNewEventColor('#4285f4');
       setNewEventNotes('');
-      const all = [...events, {
-        ...newEventData,
-        id: 'temp', color: '#4285f4', title: '', notes: ''
-      }];
-      const url = buildScheduleUrl(window.location.href, scheduleId, all, scheduleTitle);
-      window.history.replaceState(null, '', url);
+      // const all = [...events, {
+      //   ...newEventData,
+      //   id: 'temp', color: '#4285f4', title: '', notes: ''
+      // }];
+      // const base = window.location.origin + window.location.pathname;
+      // const url = buildScheduleUrl(base, scheduleId, all, scheduleTitle);
+      // window.history.replaceState(null, '', url);
     }
 
     setIsDragging(false);

@@ -74,13 +74,14 @@ export const CalendarList: React.FC<CalendarListProps> = ({
         }
         return event;
       });
-      const createdUrl = buildScheduleUrl(
-        window.location.href,
-        scheduleId,
-        updatedEvents.filter(ev => ev.approvals?.[userName]),
-        scheduleTitle
-      );
-      window.history.replaceState(null, '', createdUrl);
+    //   const base = window.location.origin + window.location.pathname;
+    //   const createdUrl = buildScheduleUrl(
+    //     base,
+    //     scheduleId,
+    //     updatedEvents.filter(ev => ev.approvals?.[userName]),
+    //     scheduleTitle
+    //   );
+    //   window.history.replaceState(null, '', createdUrl);
 
       // localStorage にもこのユーザーの OK/NG 状況を保存
       if (scheduleId && userName) {
