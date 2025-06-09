@@ -1,10 +1,9 @@
 import React, { useState, useRef, MouseEvent, useEffect, TouchEvent } from 'react';
 import { HeaderProps } from './Header.types';
 import { Calendar, ChevronLeft, ChevronRight, Copy, List, Settings, Plus, PenSquare } from 'lucide-react';
-import { getJsonItem, setJsonItem, removeJsonItem } from '../../utils/storage';
+import { getJsonItem, setJsonItem } from '../../utils/storage';
 import { copyScheduleLink } from '../../utils/clipboard';
 import { formatDate } from '../../utils/dateUtils';
-import { useShareEvents } from '../../utils/shareEvents';
 
 export const Header: React.FC<HeaderProps> = ({
   displayTitle,
@@ -32,36 +31,24 @@ export const Header: React.FC<HeaderProps> = ({
   handleAnsweredSchedulesClick,
   setEventData
 }) => {
+  // Count schedules created by this user (owner entries)
+  const createdCount = scheduleIds.filter(id => {
+    const stored = getJsonItem<{ events: any[] }>(`calendar-events-${id}`);
+    if (!stored?.events) return false;
+    // いずれかのイベントに createdBy===userName があれば「作成者」
+    return stored.events.some(ev => ev.createdBy === userName);
+  }).length;
+
+  const [hasAnsweredSchedules, setHasAnsweredSchedules] = useState(false);
+
   useEffect(() => {
     if (scheduleId && userName) {
-      const hasAnswers = getJsonItem(`calendar-approvals-${scheduleId}-${userName}`) !== null;
-      setHasAnsweredSchedules(hasAnswers);
+      const approvals = getJsonItem(`calendar-approvals-${scheduleId}-${userName}`);
+      setHasAnsweredSchedules(approvals !== null);
     } else {
       setHasAnsweredSchedules(false);
     }
   }, [scheduleId, userName]);
-
-  useEffect(() => {
-    let hasValid = false;
-    for (const id of scheduleIds) {
-      const storedData = getJsonItem(`calendar-events-${id}`);
-      if (storedData) {
-        try {
-          const { sharedAt } = storedData as any;
-          if (sharedAt && !isNaN(new Date(sharedAt).getTime())) {
-            hasValid = true;
-            break;
-          }
-        } catch (error) {
-          console.error('Failed to parse stored data:', error);
-        }
-      }
-    }
-    setHasValidSchedules(hasValid);
-  }, [scheduleIds]);
-
-  const [hasValidSchedules, setHasValidSchedules] = useState(false);
-  const [hasAnsweredSchedules, setHasAnsweredSchedules] = useState(false);
 
   const handlePrevWeek = () => {
     const newDate = new Date(currentDate);
@@ -79,40 +66,31 @@ export const Header: React.FC<HeaderProps> = ({
     setCurrentDate(new Date());
   };
 
-  // 共有ボタン押下時の処理を修正: localStorage ではなく in-memory の events を使う
   const handleShareEvents = async () => {
     if (!userName) {
       setShowNameModal(true);
       return;
     }
     try {
-      // 「owner なら全イベント」,「回答者なら OK したイベントのみ」
       const storedEvents = effectiveCreator
         ? events
         : events.filter(ev => ev.approvals?.[userName]);
-
       await copyScheduleLink(
         storedEvents,
         window.location.href,
         scheduleId,
         scheduleTitle || ''
       );
-      // ─── 非オーナー（回答者）がリンクをコピーしたタイミングで scheduleIds に追加 ───
-      if (!effectiveCreator) {
-        // まだ含まれていなければ push
-        if (!scheduleIds.includes(scheduleId)) {
-          const nextIds = [...scheduleIds, scheduleId];
-          setScheduleIds(nextIds);
-          // localStorage にも同期
-          setJsonItem('calendar-schedule-ids', nextIds);
-        }
-        // コピー後すぐに「回答済みの候補日程」ボタンを表示させる
+      if (!effectiveCreator && !scheduleIds.includes(scheduleId)) {
+        const nextIds = [...scheduleIds, scheduleId];
+        setScheduleIds(nextIds);
+        setJsonItem('calendar-schedule-ids', nextIds);
         setHasAnsweredSchedules(true);
       }
       setCopyButtonText('コピーしました！');
       setShowCopiedToast(true);
       if (copyTimeoutRef.current) {
-        window.clearTimeout(copyTimeoutRef.current);
+        clearTimeout(copyTimeoutRef.current);
       }
       copyTimeoutRef.current = window.setTimeout(() => {
         setCopyButtonText('共有リンクをコピー');
@@ -126,6 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <div>
       <header className="flex flex-col">
+        {/* Top bar */}
         <div className="h-16 px-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button className="p-3 hover:bg-gray-100 rounded-full">
@@ -133,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <div className="flex items-center gap-2">
               <h1 className="text-xl text-gray-800">カレンダー</h1>
-              {displayTitle && (
+              {displayTitle ? (
                 <span className="text-gray-600">
                   {displayTitle}
                   {isCreator && (
@@ -146,8 +125,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                   )}
                 </span>
-              )}
-              {!displayTitle && isCreator && (
+              ) : isCreator ? (
                 <button
                   className="p-2 hover:bg-gray-100 rounded-full"
                   onClick={() => setShowTitleModal(true)}
@@ -155,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <PenSquare className="w-4 h-4 text-gray-600" />
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -187,11 +165,11 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         </div>
-
+        {/* Bottom bar */}
         <div className="h-16 px-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4">
             <button
-              className="px-3 sm:px-6 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
+              className="px-3 sm:px-6 py-2 bg-white hover:bg-gray-100 rounded-md border"
               onClick={handleToday}
             >
               今日
@@ -213,7 +191,7 @@ export const Header: React.FC<HeaderProps> = ({
             <h2 className="text-base sm:text-xl">{formatDate(currentDate)}</h2>
           </div>
           <div className="flex items-center gap-2">
-            {hasValidSchedules && (
+            {createdCount > 0 && (
               <button
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white hover:bg-gray-100 rounded-md border text-sm sm:text-base"
                 onClick={handleScheduleHistoryClick}
@@ -236,7 +214,6 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline">予定を作成</span>
-                <span className="sm:hidden">作成</span>
               </button>
             )}
           </div>
@@ -245,3 +222,5 @@ export const Header: React.FC<HeaderProps> = ({
     </div>
   );
 };
+
+export default Header;
