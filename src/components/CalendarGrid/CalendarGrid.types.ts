@@ -1,6 +1,8 @@
 import { CalendarEvent, TimeRange } from '../../types/calendar';
 
 export interface CalendarGridProps {
+  scheduleId: string;
+  scheduleTitle: string;
   gridRef: () => HTMLDivElement;
   timeRange: TimeRange;
   currentTime: Date;

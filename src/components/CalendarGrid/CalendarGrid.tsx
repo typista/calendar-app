@@ -4,10 +4,13 @@ import { formatEventTime, formatEventDate, getDayNumbers } from '../../utils/dat
 import { CalendarGridProps } from './CalendarGrid.types';
 import { Check, X as XIcon, Trash2 } from 'lucide-react';
 import { ModalWrapper } from '../Modal/ModalWrapper';
+import { buildScheduleUrl } from '../../utils/buildScheduleUrl';
 
 export const CalendarGrid: React.FC<
   CalendarGridProps & { userName: string }
 > = ({
+  scheduleId,
+  scheduleTitle,
   userName,
   gridRef,
   timeRange,
@@ -266,10 +269,17 @@ export const CalendarGrid: React.FC<
     }
 
     if (finalStart.getTime() !== finalEnd.getTime()) {
-      setEventData({ show: true, start: finalStart, end: finalEnd });
+      const newEventData = { show: true, start: finalStart, end: finalEnd };
+      setEventData(newEventData);
       setNewEventTitle('');
       setNewEventColor('#4285f4');
       setNewEventNotes('');
+      const all = [...events, {
+        ...newEventData,
+        id: 'temp', color: '#4285f4', title: '', notes: ''
+      }];
+      const url = buildScheduleUrl(window.location.href, scheduleId, all, scheduleTitle);
+      window.history.replaceState(null, '', url);
     }
 
     setIsDragging(false);

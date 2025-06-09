@@ -401,6 +401,8 @@ function App() {
         />
 
         <CalendarGrid
+          scheduleId={scheduleId}
+          scheduleTitle={scheduleTitle}
           userName={userName}
           gridRef={gridRef}
           timeRange={timeRange}
@@ -424,6 +426,7 @@ function App() {
         isCreator={isCreator}
         effectiveCreator={effectiveCreator}
         scheduleId={scheduleId}
+        scheduleTitle={scheduleTitle}
         onClick={setShowBottomSheet}
         setEvents={setEvents}
         setEventData={setEventData}

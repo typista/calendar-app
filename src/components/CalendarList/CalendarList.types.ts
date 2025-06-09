@@ -7,6 +7,7 @@ export interface CalendarListProps {
     isCreator: boolean;
     effectiveCreator: boolean;
     scheduleId: string;
+    scheduleTitle: string;
     onClick: (boolean) => void;
     setEvents: Dispatch<SetStateAction<Event[]>>;
     showBottomSheet: boolean;

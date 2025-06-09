@@ -2,6 +2,8 @@ import React, { useState, MouseEvent } from 'react';
 import { formatEventDate, formatEventTime } from '../../utils/dateUtils';
 import { getJsonItem, setJsonItem } from '../../utils/storage';
 import { CalendarListProps } from './CalendarList.types';
+import { buildScheduleUrl } from '../../utils/buildScheduleUrl';
+
 import {
   Copy,
   Check,
@@ -19,6 +21,7 @@ export const CalendarList: React.FC<CalendarListProps> = ({
   isCreator,
   effectiveCreator,
   scheduleId,
+  scheduleTitle,
   onClick,
   setEvents,
   showBottomSheet,
@@ -71,6 +74,13 @@ export const CalendarList: React.FC<CalendarListProps> = ({
         }
         return event;
       });
+      const createdUrl = buildScheduleUrl(
+        window.location.href,
+        scheduleId,
+        updatedEvents.filter(ev => ev.approvals?.[userName]),
+        scheduleTitle
+      );
+      window.history.replaceState(null, '', createdUrl);
 
       // localStorage にもこのユーザーの OK/NG 状況を保存
       if (scheduleId && userName) {
