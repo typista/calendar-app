@@ -157,6 +157,19 @@ function App() {
     }
   }, [scheduleIds]);
 
+  useEffect(() => {
+    // 自分が登録したタイトルのオーナーなら
+    if (userName && displayTitle) {
+      setJsonItem(`calendar-schedule-owner-${scheduleId}`, userName);
+      const owner = getJsonItem<string>(`calendar-schedule-owner-${scheduleId}`);
+      if (owner === userName && !scheduleIds.includes(scheduleId)) {
+        const next = [...scheduleIds, scheduleId];
+        setScheduleIds(next);
+        setJsonItem('calendar-schedule-ids', next);
+      }
+    }
+  }, [userName, displayTitle, scheduleId, scheduleIds]);
+
   const loadFromLocalStorage = useCallback((id: string) => {
     const storedData = getJsonItem<ScheduleHistory>(`calendar-events-${id}`);
     const storedTitle = getJsonItem<string>(`calendar-schedule-title-${id}`);
@@ -194,6 +207,7 @@ function App() {
     setIsCreator(true);
     const updatedIds = Array.from(new Set([...(getJsonItem('calendar-schedule-ids')||'[]'), scheduleId]));
     setJsonItem('calendar-schedule-ids', updatedIds);
+    setJsonItem(`calendar-schedule-owner-${scheduleId}`, userName);
     setJsonItem(`calendar-schedule-title-${scheduleId}`, scheduleTitle);
   };
 
