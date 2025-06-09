@@ -207,8 +207,8 @@ export const CalendarList: React.FC<CalendarListProps> = ({
               </button>
             </div>
           </div>
-          {/* URL クエリに含まれる回答者を常に表示 TODO: オーナーのみに変更する */}
-          {respondersList.length > 0 && (
+          {/* オーナーのみURLクエリに含まれる回答者を表示 */}
+          {events[0]?.createdBy == userName && respondersList.length > 0 && (
             <div className="mt-2 text-xs text-gray-500">
               回答者: {respondersList.join(', ')}
             </div>
